@@ -1,0 +1,8 @@
+﻿namespace CustomerLib.Business.Entities
+{
+	public abstract class Person
+	{
+		public string FirstName { get; set; }
+		public string LastName { get; set; }
+	}
+}

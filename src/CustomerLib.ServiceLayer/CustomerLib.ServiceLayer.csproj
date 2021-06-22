@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<LangVersion>9.0</LangVersion>
+		<TargetFramework>net472</TargetFramework>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\CustomerLib.Business\CustomerLib.Business.csproj" />
+		<ProjectReference Include="..\CustomerLib.Data\CustomerLib.Data.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="System.Transactions" />
+	</ItemGroup>
+
+</Project>

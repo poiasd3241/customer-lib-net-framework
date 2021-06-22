@@ -1,0 +1,26 @@
+name: Generate test coverage xml report.
+on: [push]
+jobs:
+    test-coverage:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2.3.1
+
+            - name: Restore dependencies
+              run: dotnet restore
+
+            - name: Build
+              run: dotnet build --no-restore
+
+            - name: Test
+              run: dotnet test --filter FullyQualifiedName!~IntegrationTests /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=TestResults/ /p:Exclude="[*.Data]*"
+
+            - name: Upload to Codecov
+              uses: codecov/codecov-action@v1
+              with:
+                  files: ./tests/*.Tests/TestResults/coverage.opencover.xml
+                  flags: unittests
+                  name: codecov-umbrella
+                  fail_ci_if_error: true
+                  verbose: true
