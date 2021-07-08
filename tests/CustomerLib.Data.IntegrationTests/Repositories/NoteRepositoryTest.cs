@@ -15,16 +15,43 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			Assert.NotNull(repo);
 		}
 
+		#region Exists
+
+		[Theory]
+		[InlineData(2)]
+		[InlineData(3)]
+		public void ShouldCheckIfNoteExistsById(int noteId)
+		{
+			// Given
+			var noteRepository = new NoteRepository();
+			NoteRepositoryFixture.CreateMockNote(amount: 2);
+
+			// When
+			var exists = noteRepository.Exists(noteId);
+
+			// Then
+			if (noteId == 2)
+			{
+				Assert.True(exists);
+			}
+			if (noteId == 3)
+			{
+				Assert.False(exists);
+			}
+		}
+
+		#endregion
+
 		[Fact]
 		public void ShouldCreateNote()
 		{
 			// Given
 			var noteRepository = new NoteRepository();
-			var customer = CustomerRepositoryFixture.CreateMockCustomer();
+			CustomerRepositoryFixture.CreateMockCustomer();
 			NoteRepository.DeleteAll();
 
 			var note = NoteRepositoryFixture.MockNote();
-			note.CustomerId = customer.CustomerId;
+			note.CustomerId = 1;
 
 			// When, Then
 			noteRepository.Create(note);
@@ -68,7 +95,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			var note = NoteRepositoryFixture.CreateMockNote(2);
 
 			// When
-			var readNotes = noteRepository.ReadAllByCustomer(note.CustomerId);
+			var readNotes = noteRepository.ReadByCustomer(note.CustomerId);
 
 			// Then
 			Assert.NotNull(readNotes);
@@ -89,7 +116,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			NoteRepository.DeleteAll();
 
 			// When
-			var readNotes = noteRepository.ReadAllByCustomer(1);
+			var readNotes = noteRepository.ReadByCustomer(1);
 
 			// Then
 			Assert.Null(readNotes);
@@ -138,8 +165,8 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 	public class NoteRepositoryFixture
 	{
 		/// <summary>
-		/// Creates the specified amount of mocked notes with repo-relevant valid properties, 
-		/// <see cref="Note.CustomerId"/> = 1.
+		/// Clears the Notes table, then creates the specified amount of mocked notes
+		/// with repo-relevant valid properties, <see cref="Note.CustomerId"/> = 1.
 		/// </summary>
 		/// <param name="amount">The amount of notes to create.</param>
 		/// <returns>The mocked note with repo-relevant valid properties, 
@@ -147,11 +174,11 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 		public static Note CreateMockNote(int amount = 1)
 		{
 			var noteRepository = new NoteRepository();
-			var customer = CustomerRepositoryFixture.CreateMockCustomer();
+			CustomerRepositoryFixture.CreateMockCustomer();
 			NoteRepository.DeleteAll();
 
 			var note = MockNote();
-			note.CustomerId = customer.CustomerId;
+			note.CustomerId = 1;
 
 			for (int i = 0; i < amount; i++)
 			{

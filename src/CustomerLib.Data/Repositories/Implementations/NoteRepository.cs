@@ -9,7 +9,27 @@ namespace CustomerLib.Data.Repositories.Implementations
 	{
 		#region Public Methods
 
-		public void Create(Note note)
+		public bool Exists(int noteId)
+		{
+			using var connection = GetSqlConnection();
+			connection.Open();
+
+			var command = new SqlCommand(
+				"SELECT CASE WHEN EXISTS (SELECT * FROM [dbo].[Notes] " +
+				"WHERE[NoteId] = @NoteId) " +
+				"THEN CAST(1 AS BIT) " +
+				"ELSE CAST(0 AS BIT) " +
+				"END;", connection);
+
+			command.Parameters.Add(GetNoteIdParam(noteId));
+
+			var result = command.ExecuteScalar();
+			var exists = (bool)result;
+
+			return exists;
+		}
+
+		public int Create(Note note)
 		{
 			using var connection = GetSqlConnection();
 			connection.Open();
@@ -18,12 +38,13 @@ namespace CustomerLib.Data.Repositories.Implementations
 				"INSERT INTO [dbo].[Notes] " +
 				"([CustomerId], [Content]) " +
 				"VALUES " +
-				"(@CustomerId, @Content)", connection);
+				"(@CustomerId, @Content); " +
+				"SELECT CAST(SCOPE_IDENTITY() AS INT);", connection);
 
 			command.Parameters.Add(GetCustomerIdParam(note.CustomerId));
 			command.Parameters.Add(GetContentParam(note.Content));
 
-			command.ExecuteNonQuery();
+			return (int)command.ExecuteScalar();
 		}
 
 		public Note Read(int noteId)
@@ -46,7 +67,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 			return null;
 		}
 
-		public List<Note> ReadAllByCustomer(int customerId)
+		public IReadOnlyCollection<Note> ReadByCustomer(int customerId)
 		{
 			using var connection = GetSqlConnection();
 			connection.Open();
@@ -70,7 +91,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 				notes.Add(ReadNote(reader));
 			} while (reader.Read());
 
-			return notes;
+			return notes?.ToArray();
 		}
 
 		public void Update(Note note)
@@ -81,7 +102,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 			var command = new SqlCommand(
 				"UPDATE [dbo].[Notes] " +
 				"SET [Content] = @Content " +
-				"WHERE [NoteId] = @NoteId", connection);
+				"WHERE [NoteId] = @NoteId;", connection);
 
 			command.Parameters.Add(GetContentParam(note.Content));
 			command.Parameters.Add(GetNoteIdParam(note.NoteId));
@@ -95,11 +116,11 @@ namespace CustomerLib.Data.Repositories.Implementations
 			connection.Open();
 
 			var command = new SqlCommand(
-				"DELETE FROM [dbo].[Notes] WHERE [NoteId] = @NoteId", connection);
+				"DELETE FROM [dbo].[Notes] WHERE [NoteId] = @NoteId; ", connection);
 
 			command.Parameters.Add(GetNoteIdParam(noteId));
 
-			command.ExecuteReader();
+			command.ExecuteNonQuery();
 		}
 
 		public static void DeleteAll()

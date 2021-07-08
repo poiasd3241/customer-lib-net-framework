@@ -5,9 +5,12 @@ namespace CustomerLib.Data.Repositories
 {
 	public interface IAddressRepository
 	{
-		void Create(Address address);
+		bool Exists(int addressId);
+
+		/// <returns>The Id of the created item.</returns>
+		int Create(Address address);
 		Address Read(int addressId);
-		List<Address> ReadAllByCustomer(int customerId);
+		IReadOnlyCollection<Address> ReadByCustomer(int customerId);
 		void Update(Address address);
 		void Delete(int addressId);
 		void DeleteByCustomer(int customerId);

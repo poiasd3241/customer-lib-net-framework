@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Transactions;
+using CustomerLib.Business.ArgumentCheckHelpers;
 using CustomerLib.Business.Entities;
 using CustomerLib.Business.Exceptions;
 using CustomerLib.Business.Validators;
@@ -32,6 +33,14 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 
 		#region Public Methods
 
+		public bool Exists(int noteId)
+		{
+			CheckNumber.NotLessThan(1, noteId, nameof(noteId));
+
+			var result = _noteRepository.Exists(noteId);
+			return result;
+		}
+
 		public void Save(Note note)
 		{
 			var validationResult = new NoteValidator().Validate(note);
@@ -41,56 +50,33 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
-			try
-			{
-				_noteRepository.Create(note);
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			_noteRepository.Create(note);
 		}
 
 		public Note Get(int noteId)
 		{
-			if (noteId < 1)
-			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(noteId));
-			}
+			CheckNumber.NotLessThan(1, noteId, nameof(noteId));
 
-			try
-			{
-				var note = _noteRepository.Read(noteId);
-				return note;
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			var note = _noteRepository.Read(noteId);
+			return note;
 		}
 
-		public List<Note> FindByCustomer(int customerId)
+		public IReadOnlyCollection<Note> FindByCustomer(int customerId)
 		{
-			if (customerId < 1)
-			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(customerId));
-			}
+			CheckNumber.NotLessThan(1, customerId, nameof(customerId));
 
-			try
-			{
-				var notes = _noteRepository.ReadAllByCustomer(customerId);
-				return notes;
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			var notes = _noteRepository.ReadByCustomer(customerId);
+			return notes;
 		}
 
-		public void Update(Note note)
+		/// <summary>
+		/// Updates the note.
+		/// </summary>
+		/// <param name="note">The note to update.</param>
+		/// <returns><see langword="true"/> if the update completed successfully; 
+		/// <see langword="false"/> if the provided note is not in the database.</returns>
+
+		public bool Update(Note note)
 		{
 			var validationResult = new NoteValidator().Validate(note);
 
@@ -99,33 +85,43 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
-			try
+			using TransactionScope scope = new();
+
+			if (_noteRepository.Exists(note.NoteId) == false)
 			{
-				_noteRepository.Update(note);
+				return false;
 			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+
+			_noteRepository.Update(note);
+
+			scope.Complete();
+
+			return true;
 		}
 
-		public void Delete(int noteId)
+		/// <summary>
+		/// Deletes the note.
+		/// </summary>
+		/// <param name="noteId">The ID of the note to delete.</param>
+		/// <returns><see langword="true"/> if the deletion completed successfully; 
+		/// <see langword="false"/> if the provided note (by ID) is not in the database.</returns>
+
+		public bool Delete(int noteId)
 		{
-			if (noteId < 1)
+			CheckNumber.NotLessThan(1, noteId, nameof(noteId));
+
+			using TransactionScope scope = new();
+
+			if (_noteRepository.Exists(noteId) == false)
 			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(noteId));
+				return false;
 			}
 
-			try
-			{
-				_noteRepository.Delete(noteId);
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			_noteRepository.Delete(noteId);
+
+			scope.Complete();
+
+			return true;
 		}
 
 		#endregion

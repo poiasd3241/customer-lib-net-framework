@@ -1,11 +1,18 @@
-﻿using CustomerLib.Business.Entities;
+﻿using System.Collections.Generic;
+using CustomerLib.Business.Entities;
 
 namespace CustomerLib.Data.Repositories
 {
 	public interface ICustomerRepository
 	{
-		void Create(Customer customer);
+		bool Exists(int customerId);
+
+		/// <returns>The Id of the created item.</returns>
+		int Create(Customer customer);
 		Customer Read(int customerId);
+		IReadOnlyCollection<Customer> ReadAll();
+		int GetCount();
+		IReadOnlyCollection<Customer> ReadPage(int page, int pageSize);
 		void Update(Customer customer);
 		void Delete(int customerId);
 

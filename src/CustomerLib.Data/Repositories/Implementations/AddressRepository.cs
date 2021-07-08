@@ -12,7 +12,27 @@ namespace CustomerLib.Data.Repositories.Implementations
 	{
 		#region Public Methods
 
-		public void Create(Address address)
+		public bool Exists(int addressId)
+		{
+			using var connection = GetSqlConnection();
+			connection.Open();
+
+			var command = new SqlCommand(
+				"SELECT CASE WHEN EXISTS (SELECT * FROM [dbo].[Addresses] " +
+				"WHERE[AddressId] = @AddressId) " +
+				"THEN CAST(1 AS BIT) " +
+				"ELSE CAST(0 AS BIT) " +
+				"END;", connection);
+
+			command.Parameters.Add(GetAddressIdParam(addressId));
+
+			var result = command.ExecuteScalar();
+			var exists = (bool)result;
+
+			return exists;
+		}
+
+		public int Create(Address address)
 		{
 			using var connection = GetSqlConnection();
 			connection.Open();
@@ -23,7 +43,8 @@ namespace CustomerLib.Data.Repositories.Implementations
 				"[PostalCode], [State], [Country]) " +
 				"VALUES " +
 				"(@CustomerId, @AddressLine, @AddressLine2, @AddressTypeId, @City, " +
-				"@PostalCode, @State, @Country)", connection);
+				"@PostalCode, @State, @Country); " +
+				"SELECT CAST(SCOPE_IDENTITY() AS INT);", connection);
 
 			command.Parameters.Add(GetCustomerIdParam(address.CustomerId));
 			command.Parameters.Add(GetAddressLineParam(address.AddressLine));
@@ -34,7 +55,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 			command.Parameters.Add(GetStateParam(address.State));
 			command.Parameters.Add(GetCountryParam(address.Country));
 
-			command.ExecuteNonQuery();
+			return (int)command.ExecuteScalar();
 		}
 
 		public Address Read(int addressId)
@@ -57,7 +78,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 			return null;
 		}
 
-		public List<Address> ReadAllByCustomer(int customerId)
+		public IReadOnlyCollection<Address> ReadByCustomer(int customerId)
 		{
 			using var connection = GetSqlConnection();
 			connection.Open();
@@ -74,14 +95,14 @@ namespace CustomerLib.Data.Repositories.Implementations
 				return null;
 			}
 
-			var addresss = new List<Address>();
+			var addresses = new List<Address>();
 
 			do
 			{
-				addresss.Add(ReadAddress(reader));
+				addresses.Add(ReadAddress(reader));
 			} while (reader.Read());
 
-			return addresss;
+			return addresses?.ToArray();
 		}
 
 		public void Update(Address address)
@@ -92,10 +113,10 @@ namespace CustomerLib.Data.Repositories.Implementations
 			var command = new SqlCommand(
 				"UPDATE [dbo].[Addresses] " +
 				"SET [CustomerId] = @CustomerId, [AddressLine] = @AddressLine, " +
-				"[AddressLine2] = AddressLine2, [AddressTypeId] = @AddressTypeId, " +
+				"[AddressLine2] = @AddressLine2, [AddressTypeId] = @AddressTypeId, " +
 				"[City] = @City, [PostalCode] = @PostalCode, [State] = @State, " +
 				"[Country] = @Country " +
-				"WHERE [AddressId] = @AddressId", connection);
+				"WHERE [AddressId] = @AddressId;", connection);
 
 			command.Parameters.Add(GetCustomerIdParam(address.CustomerId));
 			command.Parameters.Add(GetAddressLineParam(address.AddressLine));
@@ -117,11 +138,11 @@ namespace CustomerLib.Data.Repositories.Implementations
 			connection.Open();
 
 			var command = new SqlCommand(
-				"DELETE FROM [dbo].[Addresses] WHERE [AddressId] = @AddressId", connection);
+				"DELETE FROM [dbo].[Addresses] WHERE [AddressId] = @AddressId;", connection);
 
 			command.Parameters.Add(GetAddressIdParam(addressId));
 
-			command.ExecuteReader();
+			command.ExecuteNonQuery();
 		}
 
 		public void DeleteByCustomer(int customerId)
@@ -130,11 +151,11 @@ namespace CustomerLib.Data.Repositories.Implementations
 			connection.Open();
 
 			var command = new SqlCommand(
-				"DELETE FROM [dbo].[Addresses] WHERE [CustomerId] = @CustomerId", connection);
+				"DELETE FROM [dbo].[Addresses] WHERE [CustomerId] = @CustomerId;", connection);
 
 			command.Parameters.Add(GetCustomerIdParam(customerId));
 
-			command.ExecuteReader();
+			command.ExecuteNonQuery();
 		}
 
 		public static void DeleteAll()
@@ -157,7 +178,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 		private static Address ReadAddress(IDataRecord dataRecord) => new()
 		{
-			AddressId = (int)dataRecord["CustomerId"],
+			AddressId = (int)dataRecord["AddressId"],
 			CustomerId = (int)dataRecord["CustomerId"],
 			AddressLine = dataRecord["AddressLine"].ToString(),
 			AddressLine2 = dataRecord.GetValueOrDefault<string>("AddressLine2"),

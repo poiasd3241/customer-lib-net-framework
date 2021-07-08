@@ -1,5 +1,7 @@
-﻿using System;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Transactions;
+using CustomerLib.Business.ArgumentCheckHelpers;
 using CustomerLib.Business.Entities;
 using CustomerLib.Business.Exceptions;
 using CustomerLib.Business.Validators;
@@ -10,6 +12,8 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 {
 	public class CustomerService : ICustomerService
 	{
+		// TODO: extract Addresses and Notes population.
+
 		#region Private Members
 
 		private readonly ICustomerRepository _customerRepository;
@@ -39,6 +43,14 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 
 		#region Public Methods
 
+		public bool Exists(int customerId)
+		{
+			CheckNumber.NotLessThan(1, customerId, nameof(customerId));
+
+			var result = _customerRepository.Exists(customerId);
+			return result;
+		}
+
 		public void Save(Customer customer)
 		{
 			var validationResult = new CustomerValidator().Validate(customer);
@@ -48,119 +60,203 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
-			try
+			using TransactionScope scope = new();
+
+			if (_customerRepository.IsEmailTaken(customer.Email))
 			{
-				if (_customerRepository.IsEmailTaken(customer.Email))
-				{
-					throw new EmailTakenException(customer.Email);
-				}
-
-				using var scope = new TransactionScope();
-
-				_customerRepository.Create(customer);
-
-				foreach (var address in customer.Addresses)
-				{
-					_addressService.Save(address);
-				}
-
-				foreach (var note in customer.Notes)
-				{
-					_noteService.Save(note);
-				}
-
-				scope.Complete();
+				throw new EmailTakenException(customer.Email);
 			}
-			catch (Exception e) when (e is not EmailTakenException)
+
+			var customerId = _customerRepository.Create(customer);
+
+			foreach (var address in customer.Addresses)
 			{
-				// Log / return helpful message to the user.
-				throw;
+				address.CustomerId = customerId;
+				_addressService.Save(address);
 			}
+
+			foreach (var note in customer.Notes)
+			{
+				note.CustomerId = customerId;
+				_noteService.Save(note);
+			}
+
+			scope.Complete();
 		}
 
-		public Customer Get(int customerId)
+		public Customer Get(int customerId, bool includeAddresses, bool includeNotes)
 		{
-			if (customerId < 1)
-			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(customerId));
-			}
+			CheckNumber.NotLessThan(1, customerId, nameof(customerId));
 
-			try
+			using TransactionScope scope = new();
+
+			var customer = _customerRepository.Read(customerId);
+
+			if (customer is null)
 			{
-				var customer = _customerRepository.Read(customerId);
 				return customer;
 			}
-			catch
+
+			if (includeAddresses)
 			{
-				// Log / return helpful message to the user.
-				throw;
+				customer.Addresses =
+					_addressService.FindByCustomer(customer.CustomerId)?.ToList();
 			}
+
+			if (includeNotes)
+			{
+				customer.Notes =
+					_noteService.FindByCustomer(customer.CustomerId)?.ToList();
+			}
+
+			return customer;
 		}
 
-		public void Update(Customer customer)
+		public IReadOnlyCollection<Customer> GetAll(bool includeAddresses, bool includeNotes)
 		{
-			var validationResult = new CustomerValidator().Validate(customer);
+			using TransactionScope scope = new();
+
+			var customers = _customerRepository.ReadAll();
+
+			if (customers is null)
+			{
+				return customers;
+			}
+
+			if (includeAddresses)
+			{
+				foreach (var customer in customers)
+				{
+					customer.Addresses =
+						_addressService.FindByCustomer(customer.CustomerId)?.ToList();
+				}
+			}
+
+			if (includeNotes)
+			{
+				foreach (var customer in customers)
+				{
+					customer.Notes =
+						_noteService.FindByCustomer(customer.CustomerId)?.ToList();
+				}
+			}
+
+			return customers;
+		}
+
+		public int GetCount() => _customerRepository.GetCount();
+
+		public IReadOnlyCollection<Customer> GetPage(int page, int pageSize,
+			bool includeAddresses, bool includeNotes,
+			bool checkTotalSame = false, int expectedTotal = 0)
+		{
+			CheckNumber.NotLessThan(1, page, nameof(page));
+			CheckNumber.NotLessThan(1, pageSize, nameof(pageSize));
+			CheckNumber.NotLessThan(0, expectedTotal, nameof(expectedTotal));
+
+			using TransactionScope scope = new();
+
+			if (checkTotalSame)
+			{
+				var totalCustomers = GetCount();
+
+				if (expectedTotal != totalCustomers)
+				{
+					throw new DataChangedWhileProcessingException();
+				}
+			}
+
+			var customers = _customerRepository.ReadPage(page, pageSize);
+
+			if (customers is null)
+			{
+				return customers;
+			}
+
+			if (includeAddresses)
+			{
+				foreach (var customer in customers)
+				{
+					customer.Addresses =
+						_addressService.FindByCustomer(customer.CustomerId)?.ToList();
+				}
+			}
+
+			if (includeNotes)
+			{
+				foreach (var customer in customers)
+				{
+					customer.Notes =
+						_noteService.FindByCustomer(customer.CustomerId)?.ToList();
+				}
+			}
+
+			return customers;
+		}
+
+		/// <summary>
+		/// Updates the customer (Addresses and Notes are ignored).
+		/// </summary>
+		/// <param name="customer">The customer to update.</param>
+		/// <returns><see langword="true"/> if the update completed successfully; 
+		/// <see langword="false"/> if the provided customer is not in the database.</returns>
+		public bool Update(Customer customer)
+		{
+			var validationResult = new CustomerValidator()
+				.ValidateWithoutAddressesAndNotes(customer);
 
 			if (validationResult.IsValid == false)
 			{
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
-			try
+			using TransactionScope scope = new();
+
+			if (_customerRepository.Exists(customer.CustomerId) == false)
 			{
-				var (isTaken, takenById) = _customerRepository.IsEmailTakenWithCustomerId(
-					customer.Email);
-
-				if (isTaken && takenById != customer.CustomerId)
-				{
-					throw new EmailTakenException(customer.Email);
-				}
-
-				using TransactionScope scope = new();
-
-				_customerRepository.Update(customer);
-
-				foreach (var address in customer.Addresses)
-				{
-					_addressService.Update(address);
-				}
-
-				foreach (var note in customer.Notes)
-				{
-					_noteService.Update(note);
-				}
-
-				scope.Complete();
+				return false;
 			}
-			catch (Exception e) when (e is not EmailTakenException)
+
+			var (isTaken, takenById) = _customerRepository.IsEmailTakenWithCustomerId(
+				customer.Email);
+
+			if (isTaken && takenById != customer.CustomerId)
 			{
-				// Log / return helpful message to the user.
-				throw;
+				throw new EmailTakenException(customer.Email);
 			}
+
+			_customerRepository.Update(customer);
+
+			scope.Complete();
+
+			return true;
 		}
 
-		public void Delete(int customerId)
+		/// <summary>
+		/// Deletes the customer, including its Addresses and Notes.
+		/// </summary>
+		/// <param name="customerId">The ID of the customer to delete.</param>
+		/// <returns><see langword="true"/> if the deletion completed successfully; 
+		/// <see langword="false"/> if the provided customer (by ID) is not in the database.
+		/// </returns>
+		public bool Delete(int customerId)
 		{
-			if (customerId < 1)
+			CheckNumber.NotLessThan(1, customerId, nameof(customerId));
+
+			using TransactionScope scope = new();
+
+			if (_customerRepository.Exists(customerId) == false)
 			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(customerId));
+				return false;
 			}
 
-			try
-			{
-				using TransactionScope scope = new();
+			_addressService.DeleteByCustomer(customerId);
 
-				_addressService.DeleteByCustomer(customerId);
+			_customerRepository.Delete(customerId);
 
-				_customerRepository.Delete(customerId);
+			scope.Complete();
 
-				scope.Complete();
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			return true;
 		}
 
 		#endregion

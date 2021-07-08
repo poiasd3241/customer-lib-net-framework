@@ -5,9 +5,12 @@ namespace CustomerLib.Data.Repositories
 {
 	public interface INoteRepository
 	{
-		void Create(Note note);
+		bool Exists(int noteId);
+
+		/// <returns>The Id of the created item.</returns>
+		int Create(Note note);
 		Note Read(int noteId);
-		List<Note> ReadAllByCustomer(int customerId);
+		IReadOnlyCollection<Note> ReadByCustomer(int customerId);
 		void Update(Note note);
 		void Delete(int noteId);
 	}

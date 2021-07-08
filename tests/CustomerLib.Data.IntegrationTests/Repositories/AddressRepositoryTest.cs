@@ -18,17 +18,44 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			Assert.NotNull(repo);
 		}
 
+		#region Exists
+
+		[Theory]
+		[InlineData(2)]
+		[InlineData(3)]
+		public void ShouldCheckIfNoteExistsById(int addressId)
+		{
+			// Given
+			var addressRepository = new AddressRepository();
+			AddressRepositoryFixture.CreateMockAddress(amount: 2);
+
+			// When
+			var exists = addressRepository.Exists(addressId);
+
+			// Then
+			if (addressId == 2)
+			{
+				Assert.True(exists);
+			}
+			if (addressId == 3)
+			{
+				Assert.False(exists);
+			}
+		}
+
+		#endregion
+
 		[Fact]
 		public void ShouldCreateAddress()
 		{
 			// Given
 			var addressRepository = new AddressRepository();
-			var customer = CustomerRepositoryFixture.CreateMockCustomer();
+			CustomerRepositoryFixture.CreateMockCustomer();
 			AddressRepository.DeleteAll();
 			AddressTypeHelperRepository.UnsafeRepopulateAddressTypes();
 
 			var address = AddressRepositoryFixture.MockAddress();
-			address.CustomerId = customer.CustomerId;
+			address.CustomerId = 1;
 
 			// When, Then
 			addressRepository.Create(address);
@@ -88,7 +115,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			var address = AddressRepositoryFixture.CreateMockAddress(2);
 
 			// When
-			var readAddresses = addressRepository.ReadAllByCustomer(address.CustomerId);
+			var readAddresses = addressRepository.ReadByCustomer(address.CustomerId);
 
 			// Then
 			Assert.NotNull(readAddresses);
@@ -115,7 +142,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			AddressRepository.DeleteAll();
 
 			// When
-			var readAddresses = addressRepository.ReadAllByCustomer(1);
+			var readAddresses = addressRepository.ReadByCustomer(1);
 
 			// Then
 			Assert.Null(readAddresses);
@@ -173,14 +200,14 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			var addressRepository = new AddressRepository();
 			AddressRepositoryFixture.CreateMockAddress(2);
 
-			var createdAddresses = addressRepository.ReadAllByCustomer(1);
+			var createdAddresses = addressRepository.ReadByCustomer(1);
 			Assert.Equal(2, createdAddresses.Count);
 
 			// When
 			addressRepository.DeleteByCustomer(1);
 
 			// Then
-			var deletedAddresses = addressRepository.ReadAllByCustomer(1);
+			var deletedAddresses = addressRepository.ReadByCustomer(1);
 			Assert.Null(deletedAddresses);
 		}
 	}
@@ -188,8 +215,9 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 	public class AddressRepositoryFixture
 	{
 		/// <summary>
-		/// Creates the specified amount of mocked addresses with repo-relevant valid properties, 
-		/// optional properties not null, <see cref="Address.CustomerId"/> = 1.
+		/// Clears the Addresses table, then creates the specified amount of mocked addresses 
+		/// with repo-relevant valid properties, optional properties not null, 
+		/// <see cref="Address.CustomerId"/> = 1.
 		/// </summary>
 		/// <param name="amount">The amount of addresses to create.</param>
 		/// <returns>The mocked address with repo-relevant valid properties, 
@@ -197,12 +225,12 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 		public static Address CreateMockAddress(int amount = 1)
 		{
 			var addressRepository = new AddressRepository();
-			var customer = CustomerRepositoryFixture.CreateMockCustomer();
+			CustomerRepositoryFixture.CreateMockCustomer();
 			AddressRepository.DeleteAll();
 			AddressTypeHelperRepository.UnsafeRepopulateAddressTypes();
 
 			var address = MockAddress();
-			address.CustomerId = customer.CustomerId;
+			address.CustomerId = 1;
 
 			for (int i = 0; i < amount; i++)
 			{
@@ -212,17 +240,24 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			return address;
 		}
 
+		/// <summary>
+		/// Clears the Addresses table, then creates the mocked address
+		/// with repo-relevant valid properties, optional properties null, 
+		/// <see cref="Address.CustomerId"/> = 1.
+		/// </summary>
 		/// <returns>The mocked address with repo-relevant valid properties, 
 		/// optional properties null, <see cref="Address.CustomerId"/> = 1.</returns>
 		public static Address CreateMockOptionalAddress()
 		{
 			var addressRepository = new AddressRepository();
-			var customer = CustomerRepositoryFixture.CreateMockCustomer();
+			CustomerRepositoryFixture.CreateMockCustomer();
 			AddressRepository.DeleteAll();
-			AddressTypeHelperRepository.UnsafeRepopulateAddressTypes();
+
+			AddressTypeHelperRepository
+				.UnsafeRepopulateAddressTypes();
 
 			var address = MockOptionalAddress();
-			address.CustomerId = customer.CustomerId;
+			address.CustomerId = 1;
 
 			addressRepository.Create(address);
 

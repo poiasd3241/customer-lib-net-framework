@@ -1,6 +1,9 @@
-﻿namespace CustomerLib.Business.Entities
+﻿using System;
+
+namespace CustomerLib.Business.Entities
 {
-	public class Note
+	[Serializable]
+	public class Note : Entity
 	{
 		public int NoteId { get; set; }
 		public int CustomerId { get; set; }

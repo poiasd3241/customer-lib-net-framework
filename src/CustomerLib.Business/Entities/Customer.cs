@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CustomerLib.Business.Entities
 {
+	[Serializable]
 	public class Customer : Person
 	{
 		public int CustomerId { get; set; }

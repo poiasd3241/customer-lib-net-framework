@@ -4,6 +4,7 @@ using CustomerLib.Business.Entities;
 using CustomerLib.Business.Enums;
 using CustomerLib.Business.Localization;
 using FluentValidation;
+using static FluentValidation.DefaultValidatorExtensions;
 
 namespace CustomerLib.Business.Validators
 {

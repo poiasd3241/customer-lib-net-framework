@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using CustomerLib.Business.Entities;
@@ -10,7 +11,27 @@ namespace CustomerLib.Data.Repositories.Implementations
 	{
 		#region Public Methods
 
-		public void Create(Customer customer)
+		public bool Exists(int customerId)
+		{
+			using var connection = GetSqlConnection();
+			connection.Open();
+
+			var command = new SqlCommand(
+				"SELECT CASE WHEN EXISTS (SELECT * FROM [dbo].[Customers] " +
+				"WHERE[CustomerId] = @CustomerId) " +
+				"THEN CAST(1 AS BIT) " +
+				"ELSE CAST(0 AS BIT) " +
+				"END;", connection);
+
+			command.Parameters.Add(GetCustomerIdParam(customerId));
+
+			var result = command.ExecuteScalar();
+			var exists = (bool)result;
+
+			return exists;
+		}
+
+		public int Create(Customer customer)
 		{
 			using var connection = GetSqlConnection();
 			connection.Open();
@@ -19,7 +40,8 @@ namespace CustomerLib.Data.Repositories.Implementations
 				"INSERT INTO [dbo].[Customers] " +
 				"([FirstName], [LastName], [PhoneNumber], [Email], [TotalPurchasesAmount]) " +
 				"VALUES " +
-				"(@FirstName, @LastName, @PhoneNumber, @Email, @TotalPurchasesAmount)", connection);
+				"(@FirstName, @LastName, @PhoneNumber, @Email, @TotalPurchasesAmount); " +
+				"SELECT CAST(SCOPE_IDENTITY() AS INT);", connection);
 
 			command.Parameters.Add(GetFirstNameParam(customer.FirstName));
 			command.Parameters.Add(GetLastNameParam(customer.LastName));
@@ -27,7 +49,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 			command.Parameters.Add(GetEmailParameter(customer.Email));
 			command.Parameters.Add(GetTotalPurchasesAmountParameter(customer.TotalPurchasesAmount));
 
-			command.ExecuteNonQuery();
+			return (int)command.ExecuteScalar();
 		}
 
 		public Customer Read(int customerId)
@@ -36,7 +58,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 			connection.Open();
 
 			var command = new SqlCommand(
-				"SELECT * FROM [dbo].[Customers] WHERE [CustomerId] = @CustomerId", connection);
+				"SELECT * FROM [dbo].[Customers] WHERE [CustomerId] = @CustomerId;", connection);
 
 			command.Parameters.Add(GetCustomerIdParam(customerId));
 
@@ -44,19 +66,58 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			if (reader.Read())
 			{
-				return new Customer()
-				{
-					CustomerId = customerId,
-					FirstName = reader.GetValueOrDefault<string>("FirstName"),
-					LastName = reader["LastName"].ToString(),
-					PhoneNumber = reader.GetValueOrDefault<string>("PhoneNumber"),
-					Email = reader.GetValueOrDefault<string>("Email"),
-					TotalPurchasesAmount = reader.GetValueOrDefault<decimal?>(
-						"TotalPurchasesAmount")
-				};
+				return ReadCustomer(reader);
 			}
 
 			return null;
+		}
+
+		public IReadOnlyCollection<Customer> ReadAll()
+		{
+			using var connection = GetSqlConnection();
+			connection.Open();
+
+			var command = new SqlCommand("SELECT * FROM [dbo].[Customers];", connection);
+
+			using var reader = command.ExecuteReader();
+
+			var customers = ReadCustomers(reader);
+
+			return customers?.ToArray();
+		}
+
+		public int GetCount()
+		{
+			using var connection = GetSqlConnection();
+			connection.Open();
+
+			var command = new SqlCommand(
+				"SELECT COUNT(*) FROM [dbo].[Customers];", connection);
+
+			var result = command.ExecuteScalar();
+
+			return (int)result;
+		}
+
+		public IReadOnlyCollection<Customer> ReadPage(int page, int pageSize)
+		{
+			using var connection = GetSqlConnection();
+			connection.Open();
+
+			var command = new SqlCommand(
+				"SELECT * FROM [dbo].[Customers] " +
+				"ORDER BY [CustomerId] " +
+				"OFFSET @Offset ROWS " +
+				"FETCH NEXT @Fetch ROWS ONLY;", connection);
+
+			command.Parameters.Add(GetIntParam("@Offset", (page - 1) * pageSize));
+			command.Parameters.Add(GetIntParam("@Fetch", pageSize));
+
+			using var reader = command.ExecuteReader();
+
+			var customers = ReadCustomers(reader);
+
+			return customers?.ToArray();
 		}
 
 		public void Update(Customer customer)
@@ -69,7 +130,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 				"SET [FirstName] = @FirstName, [LastName] = @LastName, " +
 				"[PhoneNumber] = @PhoneNumber, [Email] = @Email, " +
 				"[TotalPurchasesAmount] = @TotalPurchasesAmount " +
-				"WHERE [CustomerId] = @CustomerId", connection);
+				"WHERE [CustomerId] = @CustomerId;", connection);
 
 			command.Parameters.Add(GetFirstNameParam(customer.FirstName));
 			command.Parameters.Add(GetLastNameParam(customer.LastName));
@@ -88,7 +149,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 			connection.Open();
 
 			var command = new SqlCommand(
-				"DELETE FROM [dbo].[Customers] WHERE [CustomerId] = @CustomerId", connection);
+				"DELETE FROM [dbo].[Customers] WHERE [CustomerId] = @CustomerId;", connection);
 
 			command.Parameters.Add(GetCustomerIdParam(customerId));
 
@@ -105,7 +166,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 				"WHERE[Email] = @Email) " +
 				"THEN CAST(1 AS BIT) " +
 				"ELSE CAST(0 AS BIT) " +
-				"END", connection);
+				"END;", connection);
 
 			command.Parameters.Add(GetEmailParameter(email));
 
@@ -122,7 +183,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			var command = new SqlCommand(
 				"SELECT [CustomerId] FROM [dbo].[Customers] " +
-				"WHERE[Email] = @Email ", connection);
+				"WHERE[Email] = @Email;", connection);
 
 			command.Parameters.Add(GetEmailParameter(email));
 
@@ -140,22 +201,50 @@ namespace CustomerLib.Data.Repositories.Implementations
 			connection.Open();
 
 			var deleteAddressesCommand = new SqlCommand(
-					"DELETE FROM [dbo].[Addresses]", connection);
+				"DELETE FROM [dbo].[Addresses]", connection);
 			deleteAddressesCommand.ExecuteNonQuery();
 
 			var deleteCustomersCommand = new SqlCommand(
-				"DELETE FROM [dbo].[Customers]", connection);
+				"DELETE FROM [dbo].[Customers];", connection);
 			deleteCustomersCommand.ExecuteNonQuery();
 
 			var reseedAffectedTablesCommand = new SqlCommand(
-				"DBCC CHECKIDENT ('dbo.Addresses', RESEED, 0) " +
-				"DBCC CHECKIDENT ('dbo.Customers', RESEED, 0)", connection);
+				"DBCC CHECKIDENT ('dbo.Addresses', RESEED, 0);" +
+				"DBCC CHECKIDENT ('dbo.Customers', RESEED, 0);", connection);
 			reseedAffectedTablesCommand.ExecuteNonQuery();
 		}
 
 		#endregion
 
 		#region Private Methods
+
+		private static Customer ReadCustomer(IDataRecord dataRecord) => new()
+		{
+			CustomerId = (int)dataRecord["CustomerId"],
+			FirstName = dataRecord.GetValueOrDefault<string>("FirstName"),
+			LastName = dataRecord["LastName"].ToString(),
+			PhoneNumber = dataRecord.GetValueOrDefault<string>("PhoneNumber"),
+			Email = dataRecord.GetValueOrDefault<string>("Email"),
+			TotalPurchasesAmount = dataRecord.GetValueOrDefault<decimal?>(
+						"TotalPurchasesAmount")
+		};
+
+		private static List<Customer> ReadCustomers(SqlDataReader reader)
+		{
+			if (reader.Read() == false)
+			{
+				return null;
+			}
+
+			var customers = new List<Customer>();
+
+			do
+			{
+				customers.Add(ReadCustomer(reader));
+			} while (reader.Read());
+
+			return customers;
+		}
 
 		private static SqlParameter GetCustomerIdParam(int customerId) =>
 			new("@CustomerId", SqlDbType.Int)
@@ -189,6 +278,12 @@ namespace CustomerLib.Data.Repositories.Implementations
 				Value = totalPurchasesAmount ?? (object)DBNull.Value,
 				Precision = 15,
 				Scale = 2
+			};
+
+		private static SqlParameter GetIntParam(string name, int value) =>
+			new(name, SqlDbType.Int)
+			{
+				Value = value
 			};
 
 		#endregion

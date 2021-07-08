@@ -1,6 +1,9 @@
-﻿namespace CustomerLib.Business.Entities
+﻿using System;
+
+namespace CustomerLib.Business.Entities
 {
-	public abstract class Person
+	[Serializable]
+	public abstract class Person : Entity
 	{
 		public string FirstName { get; set; }
 		public string LastName { get; set; }

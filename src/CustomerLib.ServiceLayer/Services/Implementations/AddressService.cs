@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Transactions;
+using CustomerLib.Business.ArgumentCheckHelpers;
 using CustomerLib.Business.Entities;
 using CustomerLib.Business.Exceptions;
 using CustomerLib.Business.Validators;
@@ -32,6 +33,14 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 
 		#region Public Methods
 
+		public bool Exists(int addressId)
+		{
+			CheckNumber.NotLessThan(1, addressId, nameof(addressId));
+
+			var result = _addressRepository.Exists(addressId);
+			return result;
+		}
+
 		public void Save(Address address)
 		{
 			var validationResult = new AddressValidator().Validate(address);
@@ -41,56 +50,32 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
-			try
-			{
-				_addressRepository.Create(address);
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			_addressRepository.Create(address);
 		}
 
 		public Address Get(int addressId)
 		{
-			if (addressId < 1)
-			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(addressId));
-			}
+			CheckNumber.NotLessThan(1, addressId, nameof(addressId));
 
-			try
-			{
-				var address = _addressRepository.Read(addressId);
-				return address;
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			var address = _addressRepository.Read(addressId);
+			return address;
 		}
 
-		public List<Address> FindByCustomer(int customerId)
+		public IReadOnlyCollection<Address> FindByCustomer(int customerId)
 		{
-			if (customerId < 1)
-			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(customerId));
-			}
+			CheckNumber.NotLessThan(1, customerId, nameof(customerId));
 
-			try
-			{
-				var addresss = _addressRepository.ReadAllByCustomer(customerId);
-				return addresss;
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			var addresses = _addressRepository.ReadByCustomer(customerId);
+			return addresses;
 		}
 
-		public void Update(Address address)
+		/// <summary>
+		/// Updates the address.
+		/// </summary>
+		/// <param name="address">The address to update.</param>
+		/// <returns><see langword="true"/> if the update completed successfully; 
+		/// <see langword="false"/> if the provided address is not in the database.</returns>
+		public bool Update(Address address)
 		{
 			var validationResult = new AddressValidator().Validate(address);
 
@@ -99,51 +84,50 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
-			try
+			using TransactionScope scope = new();
+
+			if (_addressRepository.Exists(address.AddressId) == false)
 			{
-				_addressRepository.Update(address);
+				return false;
 			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+
+			_addressRepository.Update(address);
+
+			scope.Complete();
+
+			return true;
 		}
 
-		public void Delete(int addressId)
+		/// <summary>
+		/// Deletes the address.
+		/// </summary>
+		/// <param name="addressId">The ID of the address to delete.</param>
+		/// <returns><see langword="true"/> if the deletion completed successfully; 
+		/// <see langword="false"/> if the provided address (by ID) is not in the database.
+		/// </returns>
+		public bool Delete(int addressId)
 		{
-			if (addressId < 1)
+			CheckNumber.NotLessThan(1, addressId, nameof(addressId));
+
+			using TransactionScope scope = new();
+
+			if (_addressRepository.Exists(addressId) == false)
 			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(addressId));
+				return false;
 			}
 
-			try
-			{
-				_addressRepository.Delete(addressId);
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			_addressRepository.Delete(addressId);
+
+			scope.Complete();
+
+			return true;
 		}
 
 		public void DeleteByCustomer(int customerId)
 		{
-			if (customerId < 1)
-			{
-				throw new ArgumentException("Cannot be less than 1.", nameof(customerId));
-			}
+			CheckNumber.NotLessThan(1, customerId, nameof(customerId));
 
-			try
-			{
-				_addressRepository.DeleteByCustomer(customerId);
-			}
-			catch
-			{
-				// Log / return helpful message to the user.
-				throw;
-			}
+			_addressRepository.DeleteByCustomer(customerId);
 		}
 
 		#endregion

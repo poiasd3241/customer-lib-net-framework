@@ -182,6 +182,48 @@ namespace CustomerLib.Business.Tests.Validators
 		}
 
 		#endregion
+
+		#region Validation without Addresses and Notes
+
+		[Fact]
+		public void ShouldValidateCustomerExcludingAddressesAndNotes()
+		{
+			// Given
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.Addresses = null;
+			customer.Notes = null;
+
+			// When
+			var result = _customerValidator.ValidateWithoutAddressesAndNotes(customer);
+
+			// Then
+			Assert.True(result.IsValid);
+		}
+
+
+		[Fact]
+		public void ShouldInvalidateCustomerExcludingAddressesAndNotes()
+		{
+			// Given
+			var whitespace = " ";
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.FirstName = whitespace;
+			customer.LastName = whitespace;
+			customer.PhoneNumber = whitespace;
+			customer.Email = whitespace;
+
+			// When
+			var errors = _customerValidator.ValidateWithoutAddressesAndNotes(customer).Errors;
+
+			// Then
+			Assert.Equal(4, errors.Count);
+			Assert.Equal("First name cannot be empty or whitespace.", errors[0].ErrorMessage);
+			Assert.Equal("Last name cannot be empty or whitespace.", errors[1].ErrorMessage);
+			Assert.Equal("Phone number cannot be empty or whitespace.", errors[2].ErrorMessage);
+			Assert.Equal("Email cannot be empty or whitespace.", errors[3].ErrorMessage);
+		}
+
+		#endregion
 	}
 
 	public class CustomerValidatorFixture

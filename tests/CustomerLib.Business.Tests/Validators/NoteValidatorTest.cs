@@ -1,7 +1,6 @@
 ﻿using CustomerLib.Business.Entities;
 using CustomerLib.Business.Validators;
 using Xunit;
-
 namespace CustomerLib.Business.Tests.Validators
 {
 	public class NoteValidatorTest
@@ -23,7 +22,6 @@ namespace CustomerLib.Business.Tests.Validators
 		}
 
 		#endregion
-
 
 		#region Invalid
 

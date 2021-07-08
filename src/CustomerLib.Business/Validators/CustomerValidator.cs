@@ -1,6 +1,7 @@
 ﻿using CustomerLib.Business.Entities;
 using CustomerLib.Business.Localization;
 using FluentValidation;
+using FluentValidation.Results;
 
 namespace CustomerLib.Business.Validators
 {
@@ -56,5 +57,16 @@ namespace CustomerLib.Business.Validators
 				.NotEmpty().WithMessage(ValidationRules.CUSTOMER_NOTES_COUNT_MIN)
 			.ForEach(note => note.SetValidator(new NoteValidator()));
 		}
+
+		public ValidationResult ValidateWithoutAddressesAndNotes(Customer customer) =>
+			((IValidator<Customer>)this).Validate(customer,
+				options =>
+				{
+					options.IncludeProperties(
+						nameof(Customer.FirstName),
+						nameof(Customer.LastName),
+						nameof(Customer.PhoneNumber),
+						nameof(Customer.Email));
+				});
 	}
 }

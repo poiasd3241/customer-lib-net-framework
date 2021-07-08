@@ -1,8 +1,10 @@
-﻿using CustomerLib.Business.Enums;
+﻿using System;
+using CustomerLib.Business.Enums;
 
 namespace CustomerLib.Business.Entities
 {
-	public class Address
+	[Serializable]
+	public class Address : Entity
 	{
 		public int AddressId { get; set; }
 		public int CustomerId { get; set; }
