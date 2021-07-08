@@ -91,7 +91,7 @@ namespace CustomerLib.Business.Tests.Validators
 		{
 			// Given
 			var invalidModel = GetValidTestModel();
-			invalidModel.PhoneNumberFormatE164Text = "1-23";
+			invalidModel.PhoneNumberFormatE164Text = "123";
 			invalidModel.EmailText = "@email";
 
 			// When

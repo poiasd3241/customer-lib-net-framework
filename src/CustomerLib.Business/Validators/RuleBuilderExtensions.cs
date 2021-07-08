@@ -13,7 +13,7 @@ namespace CustomerLib.Business.Validators
 
 		public static IRuleBuilderOptions<T, string> PhoneNumberFormatE164<T>(
 			this IRuleBuilder<T, string> ruleBuilder) =>
-				ruleBuilder.Matches(@"^\+?[1-9]\d{1,14}$");
+				ruleBuilder.Matches(@"^\+[1-9]\d{1,14}$");
 
 		public static IRuleBuilderOptions<T, string> Email<T>(
 			this IRuleBuilder<T, string> ruleBuilder) =>

@@ -185,17 +185,11 @@ namespace CustomerLib.WebForms.Pages.Customers
 				return;
 			}
 
-			if (foundAndUpdated)
-			{
-				this.Alert("alertUpdateResult",
-					$"Customer #{Customer.CustomerId} updated successfully!");
-			}
-			else
-			{
-				this.AlertRedirect("alertUpdateResult",
-					$"Cannot update the customer #{Customer.CustomerId}: it doesn't exist!",
-					"/Customers");
-			}
+			var alertMessage = foundAndUpdated
+				? $"Customer #{Customer.CustomerId} updated successfully!"
+				: $"Cannot update the customer #{Customer.CustomerId}: it doesn't exist!";
+
+			this.AlertRedirect("alertUpdateResult", alertMessage, "/Customers");
 		}
 
 		public void OnDeleteAddressCommand(object sender, CommandEventArgs e)
