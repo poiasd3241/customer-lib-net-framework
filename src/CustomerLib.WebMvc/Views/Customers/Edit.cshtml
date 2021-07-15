@@ -1,0 +1,41 @@
+﻿@model CustomerLib.WebMvc.Models.Customers.CustomerEditModel
+
+@{
+	ViewBag.Title = "Edit the customer";
+
+	var btnLink = new { @class = "btn btn-link" };
+	var btnPrimary = new { @class = "btn btn-primary" };
+}
+
+<h3 class="my-4">Edit the customer</h3>
+
+@using (Html.BeginForm())
+{
+	@Html.AntiForgeryToken()
+
+	<div class="form-horizontal">
+		<hr />
+		<h4 class="mb-3">Basic details</h4>
+
+		@Html.EditorFor(model => model)
+
+		<div class="mb-3">
+			<div class="col-md-offset-2 col-md-10">
+				<input type="submit" value="Save" class="btn btn-success" />
+			</div>
+		</div>
+	</div>
+}
+
+<hr />
+
+@Html.ActionLink("View notes", "Index", "Notes", new { customerId = Model.CustomerId }, btnPrimary)
+
+@Html.ActionLink("View addresses", "Index", "Addresses", new { customerId = Model.CustomerId },
+	btnPrimary)
+
+<hr />
+
+<div>
+	@Html.ActionLink("Back to all customers", "Index", new { }, btnLink)
+</div>

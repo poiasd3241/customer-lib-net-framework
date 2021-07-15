@@ -1,0 +1,8 @@
+﻿@model CustomerLib.WebMvc.Models.Addresses.AddressEditModel
+
+@{
+	var title = Model.Title;
+	ViewBag.Title = title;
+}
+
+@Html.Partial("_AddressEditOrCreate", Model)

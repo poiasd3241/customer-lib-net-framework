@@ -1,0 +1,19 @@
+﻿@model CustomerLib.WebMvc.Models.FailureModel
+
+@{
+	ViewBag.Title = "Failure";
+}
+
+<h4 class="mb-3 text-danger">Failure [@Model.Title]</h4>
+
+<p>@Model.Message</p>
+
+@if (Model.RouteValues != null)
+{
+	@Html.ActionLink(Model.LinkText, Model.ActionName, Model.ControllerName, Model.RouteValues,
+		new { })
+}
+else
+{
+	@Html.ActionLink(Model.LinkText, Model.ActionName, Model.ControllerName)
+}

@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using CustomerLib.Business.Entities;
 using CustomerLib.Business.Validators;
+using FluentValidation;
 using Xunit;
 
 namespace CustomerLib.Business.Tests.Validators
@@ -13,172 +15,274 @@ namespace CustomerLib.Business.Tests.Validators
 
 		#endregion
 
-		#region Valid
+		#region Invalid property - First name
 
-		private class MockCustomerData : TheoryData<Customer>
+		private class InvalidFirstNameData : TheoryData<string, string>
 		{
-			public MockCustomerData()
+			public InvalidFirstNameData()
 			{
-				Add(CustomerValidatorFixture.MockCustomer());
-				Add(CustomerValidatorFixture.MockOptionalCustomer());
+				Add("", "First name cannot be empty or whitespace.");
+				Add(" ", "First name cannot be empty or whitespace.");
+				Add(new('a', 51), "First name: max 50 characters.");
 			}
 		}
 
 		[Theory]
-		[ClassData(typeof(MockCustomerData))]
-		public void ShouldValidateCustomerIncludingNullOptionaProperties(Customer customer)
+		[ClassData(typeof(InvalidFirstNameData))]
+		public void ShouldInvalidateByBadFirstName(string firstName, string errorMessage)
 		{
-			var result = _customerValidator.Validate(customer);
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.FirstName = firstName;
 
-			Assert.True(result.IsValid);
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.FirstName))).Errors;
+
+			var error = Assert.Single(errors);
+			Assert.Equal(nameof(Customer.FirstName), error.PropertyName);
+			Assert.Equal(errorMessage, error.ErrorMessage);
 		}
 
 		#endregion
 
-		#region Invalid
+		#region Invalid property - Last name
 
-		[Fact]
-		public void ShouldInvalidateCustomerByRequiredTextPropertiesNull()
+		private class InvalidLastNameData : TheoryData<string, string>
 		{
-			// Given
-			var customer = CustomerValidatorFixture.MockCustomer();
-			customer.LastName = null;
-
-			// When
-			var errors = _customerValidator.Validate(customer).Errors;
-
-			// Then
-			Assert.Single(errors);
-			Assert.Equal("Last name is required.", errors[0].ErrorMessage);
-		}
-
-		private class MockInvalidAddressesAndNotesData : TheoryData<List<Address>, List<Note>>
-		{
-			public MockInvalidAddressesAndNotesData()
+			public InvalidLastNameData()
 			{
-				Add(null, null);
-				Add(new(), new());
+				Add(null, "Last name is required.");
+				Add("", "Last name cannot be empty or whitespace.");
+				Add(" ", "Last name cannot be empty or whitespace.");
+				Add(new('a', 51), "Last name: max 50 characters.");
 			}
 		}
 
 		[Theory]
-		[ClassData(typeof(MockInvalidAddressesAndNotesData))]
-		public void ShouldInvalidateCustomerByRequiredListPropertiesNullOrEmpty(
-			List<Address> addresses, List<Note> notes)
+		[ClassData(typeof(InvalidLastNameData))]
+		public void ShouldInvalidateByBadLastName(string lastName, string errorMessage)
 		{
-			// Given
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.LastName = lastName;
+
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.LastName))).Errors;
+
+			var error = Assert.Single(errors);
+			Assert.Equal(nameof(Customer.LastName), error.PropertyName);
+			Assert.Equal(errorMessage, error.ErrorMessage);
+		}
+
+		#endregion
+
+		#region Invalid property - Phone number
+
+		private class InvalidPhoneNumberData : TheoryData<string, string>
+		{
+			public InvalidPhoneNumberData()
+			{
+				Add("", "Phone number cannot be empty or whitespace.");
+				Add(" ", "Phone number cannot be empty or whitespace.");
+				Add("123456", "Phone number: must be in E.164 format.");
+			}
+		}
+
+		[Theory]
+		[ClassData(typeof(InvalidPhoneNumberData))]
+		public void ShouldInvalidateByBadPhoneNumber(string phoneNumber, string errorMessage)
+		{
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.PhoneNumber = phoneNumber;
+
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.PhoneNumber))).Errors;
+
+			var error = Assert.Single(errors);
+			Assert.Equal(nameof(Customer.PhoneNumber), error.PropertyName);
+			Assert.Equal(errorMessage, error.ErrorMessage);
+		}
+
+		#endregion
+
+		#region Invalid property - Email
+
+		private class InvalidEmailData : TheoryData<string, string>
+		{
+			public InvalidEmailData()
+			{
+				Add("", "Email cannot be empty or whitespace.");
+				Add(" ", "Email cannot be empty or whitespace.");
+				Add("a@a@a", "Invalid email.");
+			}
+		}
+
+		[Theory]
+		[ClassData(typeof(InvalidEmailData))]
+		public void ShouldInvalidateByBadEmail(string email, string errorMessage)
+		{
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.Email = email;
+
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.Email))).Errors;
+
+			var error = Assert.Single(errors);
+			Assert.Equal(nameof(Customer.Email), error.PropertyName);
+			Assert.Equal(errorMessage, error.ErrorMessage);
+		}
+
+		#endregion
+
+		#region Invalid property - Addresses
+
+		private class InvalidAddressesData : TheoryData<List<Address>, string>
+		{
+			public InvalidAddressesData()
+			{
+				Add(null, "At least one address is required.");
+				Add(new(), "At least one address is required.");
+			}
+		}
+
+		[Theory]
+		[ClassData(typeof(InvalidAddressesData))]
+		public void ShouldInvalidateByBadAddresses(List<Address> addresses, string errorMessage)
+		{
 			var customer = CustomerValidatorFixture.MockCustomer();
 			customer.Addresses = addresses;
-			customer.Notes = notes;
 
-			// When
-			var errors = _customerValidator.Validate(customer).Errors;
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.Addresses))).Errors;
 
-			// Then
-			Assert.Equal(2, errors.Count);
-			Assert.Equal("At least one address is required.", errors[0].ErrorMessage);
-			Assert.Equal("At least one note is required.", errors[1].ErrorMessage);
+			var error = Assert.Single(errors);
+			Assert.Equal(nameof(Customer.Addresses), error.PropertyName);
+			Assert.Equal(errorMessage, error.ErrorMessage);
 		}
 
 		[Fact]
-		public void ShouldInvalidateCustomerByWhitespaceProperties()
+		public void ShouldInvalidateByBadAddressContent()
+		{
+			var address = AddressValidatorFixture.MockAddress();
+			address.AddressLine = null;
+			address.State = "";
+			var addressLineErrorMsg = "Address line is required.";
+			var stateErrorMsg = "State cannot be empty or whitespace.";
+
+
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.Addresses = new() { address };
+
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.Addresses))).Errors;
+
+			Assert.Equal(2, errors.Count);
+
+			Assert.Equal($"{nameof(Customer.Addresses)}[0].{nameof(Address.AddressLine)}",
+				errors[0].PropertyName);
+			Assert.Equal($"{nameof(Customer.Addresses)}[0].{nameof(Address.State)}",
+				errors[1].PropertyName);
+
+			Assert.Equal(addressLineErrorMsg, errors[0].ErrorMessage);
+			Assert.Equal(stateErrorMsg, errors[1].ErrorMessage);
+
+		}
+
+		#endregion
+
+		#region Invalid property - Notes
+
+		private class InvalidNotesData : TheoryData<List<Note>, string>
+		{
+			public InvalidNotesData()
+			{
+				Add(null, "At least one note is required.");
+				Add(new(), "At least one note is required.");
+			}
+		}
+
+		[Theory]
+		[ClassData(typeof(InvalidNotesData))]
+		public void ShouldInvalidateByBadNotes(List<Note> notes, string errorMessage)
+		{
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.Notes = notes;
+
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.Notes))).Errors;
+
+			var error = Assert.Single(errors);
+			Assert.Equal(nameof(Customer.Notes), error.PropertyName);
+			Assert.Equal(errorMessage, error.ErrorMessage);
+		}
+
+		[Fact]
+		public void ShouldInvalidateByBadNoteContent()
+		{
+			var note = NoteValidatorFixture.MockNote();
+			note.Content = null;
+			var contentErrorMsg = "Note cannot be empty or whitespace.";
+
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.Notes = new() { note };
+
+			var errors = _customerValidator.Validate(customer, options =>
+				options.IncludeProperties(nameof(Customer.Notes))).Errors;
+
+			var error = Assert.Single(errors);
+
+			Assert.Equal($"{nameof(Customer.Notes)}[0].{nameof(Note.Content)}", error.PropertyName);
+			Assert.Equal(contentErrorMsg, error.ErrorMessage);
+		}
+
+		#endregion
+
+		#region Own properties RuleSet
+
+		[Fact]
+		public void ShouldValidateCustomerOwnRuleSet()
 		{
 			// Given
-			var whitespace = " ";
 			var customer = CustomerValidatorFixture.MockCustomer();
+
+			// Make non-Own properties invalid.
+			customer.Addresses = null;
+			customer.Notes = null;
+
+			var resultOwnRuleSet = _customerValidator.Validate(
+				customer, options => options.IncludeRuleSets("Own"));
+
+			var allPropertiesErrors = _customerValidator.Validate(
+				customer, options => options.IncludeAllRuleSets()).Errors;
+
+			Assert.True(resultOwnRuleSet.IsValid);
+
+			Assert.Equal(2, allPropertiesErrors.Count);
+			Assert.Equal("Addresses", allPropertiesErrors[0].PropertyName);
+			Assert.Equal("Notes", allPropertiesErrors[1].PropertyName);
+		}
+
+		[Fact]
+		public void ShouldInvalidateCustomerOwnRuleSet()
+		{
+			// Given
+			var customer = CustomerValidatorFixture.MockCustomer();
+			var whitespace = " ";
 			customer.FirstName = whitespace;
 			customer.LastName = whitespace;
 			customer.PhoneNumber = whitespace;
 			customer.Email = whitespace;
 
 			// When
-			var errors = _customerValidator.Validate(customer).Errors;
+			var errors = _customerValidator.Validate(
+				customer, options => options.IncludeRuleSets("Own")).Errors;
 
 			// Then
-			Assert.Equal(4, errors.Count);
-			Assert.Equal("First name cannot be empty or whitespace.", errors[0].ErrorMessage);
-			Assert.Equal("Last name cannot be empty or whitespace.", errors[1].ErrorMessage);
-			Assert.Equal("Phone number cannot be empty or whitespace.", errors[2].ErrorMessage);
-			Assert.Equal("Email cannot be empty or whitespace.", errors[3].ErrorMessage);
-		}
+			var errorPropertyNames = errors.Select(e => e.PropertyName);
 
-		[Fact]
-		public void ShouldInvalidateCustomerByLength()
-		{
-			// Given
-			var customer = CustomerValidatorFixture.MockCustomer();
-			customer.FirstName = new('a', 51);
-			customer.LastName = new('a', 51);
-
-			// When
-			var errors = _customerValidator.Validate(customer).Errors;
-
-			// Then
-			Assert.Equal(2, errors.Count);
-			Assert.Equal("First name: max 50 characters.", errors[0].ErrorMessage);
-			Assert.Equal("Last name: max 50 characters.", errors[1].ErrorMessage);
-		}
-
-		[Fact]
-		public void ShouldInvalidateCustomerByPhoneNumberFormat()
-		{
-			// Given
-			var customer = CustomerValidatorFixture.MockCustomer();
-			customer.PhoneNumber = "+012345";
-
-			// When
-			var errors = _customerValidator.Validate(customer).Errors;
-
-			// Then
-			Assert.Single(errors);
-			Assert.Equal("Phone number: must be in E.164 format.", errors[0].ErrorMessage);
-		}
-
-		[Fact]
-		public void ShouldInvalidateCustomerByEmailFormat()
-		{
-			// Given
-			var customer = CustomerValidatorFixture.MockCustomer();
-			customer.Email = "@me@asd.com";
-
-			// When
-			var errors = _customerValidator.Validate(customer).Errors;
-
-			// Then
-			Assert.Single(errors);
-			Assert.Equal("Invalid email.", errors[0].ErrorMessage);
-		}
-
-		[Fact]
-		public void ShouldInvalidateCustomerByBadAddress()
-		{
-			// Given
-			var customer = CustomerValidatorFixture.MockCustomer();
-			customer.Addresses[0].AddressLine = null;
-
-			// When
-			var errors = _customerValidator.Validate(customer).Errors;
-
-			// Then
-			var error = Assert.Single(errors);
-			Assert.Equal("Address line is required.", error.ErrorMessage);
-			Assert.Equal("Addresses[0].AddressLine", error.PropertyName);
-		}
-
-		[Fact]
-		public void ShouldInvalidateCustomerByBadNote()
-		{
-			// Given
-			var customer = CustomerValidatorFixture.MockCustomer();
-			customer.Notes[0].Content = "   ";
-
-			// When
-			var errors = _customerValidator.Validate(customer).Errors;
-
-			// Then
-			var error = Assert.Single(errors);
-			Assert.Equal("Note cannot be empty or whitespace.", error.ErrorMessage);
-			Assert.Equal("Notes[0].Content", error.PropertyName);
+			Assert.Equal(4, errorPropertyNames.Count());
+			Assert.Contains(nameof(Customer.FirstName), errorPropertyNames);
+			Assert.Contains(nameof(Customer.LastName), errorPropertyNames);
+			Assert.Contains(nameof(Customer.PhoneNumber), errorPropertyNames);
+			Assert.Contains(nameof(Customer.Email), errorPropertyNames);
 		}
 
 		#endregion
@@ -200,7 +304,6 @@ namespace CustomerLib.Business.Tests.Validators
 			Assert.True(result.IsValid);
 		}
 
-
 		[Fact]
 		public void ShouldInvalidateCustomerExcludingAddressesAndNotes()
 		{
@@ -221,6 +324,63 @@ namespace CustomerLib.Business.Tests.Validators
 			Assert.Equal("Last name cannot be empty or whitespace.", errors[1].ErrorMessage);
 			Assert.Equal("Phone number cannot be empty or whitespace.", errors[2].ErrorMessage);
 			Assert.Equal("Email cannot be empty or whitespace.", errors[3].ErrorMessage);
+		}
+
+		#endregion
+
+		#region Full validation - all RuleSets
+
+		[Fact]
+		public void ShouldValidateFullCustomer()
+		{
+			// Given
+			var customer = CustomerValidatorFixture.MockCustomer();
+
+			// When
+			var result = _customerValidator.ValidateFull(customer);
+
+			// Then
+			Assert.True(result.IsValid);
+		}
+
+		[Fact]
+		public void ShouldValidateFullCustomerWithOptionalNullProperties()
+		{
+			// Given
+			var customer = CustomerValidatorFixture.MockOptionalCustomer();
+
+			// When
+			var result = _customerValidator.ValidateFull(customer);
+
+			// Then
+			Assert.True(result.IsValid);
+		}
+
+		[Fact]
+		public void ShouldInvalidateFullCustomer()
+		{
+			// Given
+			var whitespace = " ";
+			var customer = CustomerValidatorFixture.MockCustomer();
+			customer.FirstName = whitespace;
+			customer.LastName = whitespace;
+			customer.PhoneNumber = whitespace;
+			customer.Email = whitespace;
+
+			customer.Addresses = null;
+			customer.Notes = null;
+
+			// When
+			var errors = _customerValidator.ValidateFull(customer).Errors;
+
+			// Then
+			Assert.Equal(6, errors.Count);
+			Assert.Equal("First name cannot be empty or whitespace.", errors[0].ErrorMessage);
+			Assert.Equal("Last name cannot be empty or whitespace.", errors[1].ErrorMessage);
+			Assert.Equal("Phone number cannot be empty or whitespace.", errors[2].ErrorMessage);
+			Assert.Equal("Email cannot be empty or whitespace.", errors[3].ErrorMessage);
+			Assert.Equal("At least one address is required.", errors[4].ErrorMessage);
+			Assert.Equal("At least one note is required.", errors[5].ErrorMessage);
 		}
 
 		#endregion

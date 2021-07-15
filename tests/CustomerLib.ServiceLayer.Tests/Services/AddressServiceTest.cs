@@ -5,6 +5,7 @@ using CustomerLib.Business.Enums;
 using CustomerLib.Business.Exceptions;
 using CustomerLib.Data.Repositories;
 using CustomerLib.ServiceLayer.Services.Implementations;
+using CustomerLib.TestHelpers;
 using Moq;
 using Xunit;
 
@@ -36,23 +37,24 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldCheckIfAddressExistsById(int addressId, bool existsExpected)
 		{
 			// Given
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
-			addressRepoMock.Setup(r => r.Exists(addressId)).Returns(existsExpected);
-			var service = new AddressService(addressRepoMock.Object);
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.Exists(addressId)).Returns(existsExpected);
+
+			var service = fixture.CreateService();
 
 			// When
 			var exists = service.Exists(addressId);
 
 			// Then
 			Assert.Equal(existsExpected, exists);
-			addressRepoMock.Verify(r => r.Exists(addressId), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Exists(addressId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnCheckIfAddressExistsByBadId()
 		{
 			// Given
-			var service = AddressServiceFixture.MockService();
+			var service = new AddressServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.Exists(0));
@@ -69,22 +71,50 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldSave()
 		{
 			// Given
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
-			var expectedAddress = AddressServiceFixture.MockAddress();
-			addressRepoMock.Setup(r => r.Create(expectedAddress)).Returns(5);
-			var service = new AddressService(addressRepoMock.Object);
+			var address = AddressServiceFixture.MockAddress();
+			var customerId = 5;
+			address.CustomerId = customerId;
+
+			var fixture = new AddressServiceFixture();
+			fixture.MockCustomerRepository.Setup(r => r.Exists(customerId)).Returns(true);
+			fixture.MockAddressRepository.Setup(r => r.Create(address)).Returns(8);
+
+			var service = fixture.CreateService();
 
 			// When
-			service.Save(expectedAddress);
+			var result = service.Save(address);
 
 			// Then
-			addressRepoMock.Verify(r => r.Create(expectedAddress), Times.Once);
+			Assert.True(result);
+			fixture.MockCustomerRepository.Verify(r => r.Exists(customerId), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Create(address), Times.Once);
+		}
+
+		[Fact]
+		public void ShouldNotSaveByCustomerNotFound()
+		{
+			// Given
+			var address = AddressServiceFixture.MockAddress();
+			var customerId = 5;
+			address.CustomerId = customerId;
+
+			var fixture = new AddressServiceFixture();
+			fixture.MockCustomerRepository.Setup(r => r.Exists(customerId)).Returns(false);
+
+			var service = fixture.CreateService();
+
+			// When
+			var result = service.Save(address);
+
+			// Then
+			Assert.False(result);
+			fixture.MockCustomerRepository.Verify(r => r.Exists(customerId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnSaveByBadAddress()
 		{
-			var service = AddressServiceFixture.MockService();
+			var service = new AddressServiceFixture().CreateService();
 
 			Assert.Throws<EntityValidationException>(() => service.Save(new Address()));
 		}
@@ -97,24 +127,27 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldGetAddressById()
 		{
 			// Given
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
+			var addressId = 5;
 			var expectedAddress = AddressServiceFixture.MockAddress();
-			addressRepoMock.Setup(r => r.Read(1)).Returns(expectedAddress);
-			var service = new AddressService(addressRepoMock.Object);
+
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.Read(addressId)).Returns(expectedAddress);
+
+			var service = fixture.CreateService();
 
 			// When
-			var address = service.Get(1);
+			var address = service.Get(addressId);
 
 			// Then
 			Assert.Equal(expectedAddress, address);
-			addressRepoMock.Verify(r => r.Read(1), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Read(addressId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnGetAddressByBadId()
 		{
 			// Given
-			var service = AddressServiceFixture.MockService();
+			var service = new AddressServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.Get(0));
@@ -131,24 +164,28 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldFindByCustomerId()
 		{
 			// Given
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
+			var customerId = 5;
 			var expectedAddresses = AddressServiceFixture.MockAddresses();
-			addressRepoMock.Setup(r => r.ReadByCustomer(1)).Returns(expectedAddresses);
-			var service = new AddressService(addressRepoMock.Object);
+
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.ReadByCustomer(customerId))
+				.Returns(expectedAddresses);
+
+			var service = fixture.CreateService();
 
 			// When
-			var addresses = service.FindByCustomer(1);
+			var addresses = service.FindByCustomer(customerId);
 
 			// Then
 			Assert.Equal(expectedAddresses, addresses);
-			addressRepoMock.Verify(r => r.ReadByCustomer(1), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.ReadByCustomer(customerId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnFindByCustomerByBadId()
 		{
 			// Given
-			var service = AddressServiceFixture.MockService();
+			var service = new AddressServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.FindByCustomer(0));
@@ -166,45 +203,49 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		{
 			// Given
 			var address = AddressServiceFixture.MockAddress();
-			address.AddressId = 5;
+			var addressId = 5;
+			address.AddressId = addressId;
 
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
-			addressRepoMock.Setup(r => r.Exists(address.AddressId)).Returns(true);
-			addressRepoMock.Setup(r => r.Update(address));
-			var service = new AddressService(addressRepoMock.Object);
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.Exists(addressId)).Returns(true);
+			fixture.MockAddressRepository.Setup(r => r.Update(address));
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Update(address);
 
 			// Then
 			Assert.True(result);
-			addressRepoMock.Verify(r => r.Exists(address.AddressId), Times.Once);
-			addressRepoMock.Verify(r => r.Update(address), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Exists(addressId), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Update(address), Times.Once);
 		}
 
 		[Fact]
-		public void ShouldNotUpdateNotFoundgAddress()
+		public void ShouldNotUpdateNotFoundAddress()
 		{
 			// Given
 			var address = AddressServiceFixture.MockAddress();
-			address.AddressId = 5;
+			var addressId = 5;
+			address.AddressId = addressId;
 
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
-			addressRepoMock.Setup(r => r.Exists(address.AddressId)).Returns(false);
-			var service = new AddressService(addressRepoMock.Object);
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.Exists(addressId)).Returns(false);
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Update(address);
 
 			// Then
 			Assert.False(result);
-			addressRepoMock.Verify(r => r.Exists(address.AddressId), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Exists(addressId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnUpdateByBadAddress()
 		{
-			var service = AddressServiceFixture.MockService();
+			var service = new AddressServiceFixture().CreateService();
 
 			Assert.Throws<EntityValidationException>(() => service.Update(new Address()));
 		}
@@ -219,18 +260,19 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 			// Given
 			var addressId = 5;
 
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
-			addressRepoMock.Setup(r => r.Exists(addressId)).Returns(true);
-			addressRepoMock.Setup(r => r.Delete(addressId));
-			var service = new AddressService(addressRepoMock.Object);
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.Exists(addressId)).Returns(true);
+			fixture.MockAddressRepository.Setup(r => r.Delete(addressId));
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Delete(addressId);
 
 			// Then
 			Assert.True(result);
-			addressRepoMock.Verify(r => r.Exists(addressId), Times.Once);
-			addressRepoMock.Verify(r => r.Delete(addressId), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Exists(addressId), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Delete(addressId), Times.Once);
 		}
 
 		[Fact]
@@ -239,23 +281,24 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 			// Given
 			var addressId = 5;
 
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
-			addressRepoMock.Setup(r => r.Exists(addressId)).Returns(false);
-			var service = new AddressService(addressRepoMock.Object);
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.Exists(addressId)).Returns(false);
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Delete(addressId);
 
 			// Then
 			Assert.False(result);
-			addressRepoMock.Verify(r => r.Exists(addressId), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.Exists(addressId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnDeleteByBadId()
 		{
 			// Given
-			var service = AddressServiceFixture.MockService();
+			var service = new AddressServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.Delete(0));
@@ -272,22 +315,25 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldDeleteByCustomerId()
 		{
 			// Given
-			var addressRepoMock = AddressServiceFixture.MockAddressRepository();
-			addressRepoMock.Setup(r => r.DeleteByCustomer(1));
-			var service = new AddressService(addressRepoMock.Object);
+			var customerId = 5;
+
+			var fixture = new AddressServiceFixture();
+			fixture.MockAddressRepository.Setup(r => r.DeleteByCustomer(customerId));
+
+			var service = fixture.CreateService();
 
 			// When
-			service.DeleteByCustomer(1);
+			service.DeleteByCustomer(customerId);
 
 			// Then
-			addressRepoMock.Verify(r => r.DeleteByCustomer(1), Times.Once);
+			fixture.MockAddressRepository.Verify(r => r.DeleteByCustomer(customerId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnDeleteByCustomerByBadId()
 		{
 			// Given
-			var service = AddressServiceFixture.MockService();
+			var service = new AddressServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.DeleteByCustomer(0));
@@ -318,12 +364,16 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		/// optional properties not null</returns>
 		public static List<Address> MockAddresses() => new() { MockAddress(), MockAddress() };
 
-		public static Mock<IAddressRepository> MockAddressRepository() => new(MockBehavior.Strict);
+		public StrictMock<ICustomerRepository> MockCustomerRepository { get; set; }
+		public StrictMock<IAddressRepository> MockAddressRepository { get; set; }
 
-		/// <summary>
-		/// Use when dependencies don't need to be mocked (are unused).
-		/// </summary>
-		public static AddressService MockService() =>
-				new(MockAddressRepository().Object);
+		public AddressServiceFixture()
+		{
+			MockCustomerRepository = new();
+			MockAddressRepository = new();
+		}
+
+		public AddressService CreateService() =>
+			new(MockCustomerRepository.Object, MockAddressRepository.Object);
 	}
 }

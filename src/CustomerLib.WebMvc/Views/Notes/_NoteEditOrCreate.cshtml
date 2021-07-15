@@ -1,0 +1,32 @@
+﻿@model CustomerLib.WebMvc.Models.Notes.NoteEditModel
+
+@{
+	var title = Model.Title;
+	ViewBag.Title = title;
+}
+
+<h3 class="my-4">@title</h3>
+
+@using (Html.BeginForm())
+{
+	@Html.AntiForgeryToken()
+
+	<div class="form-horizontal">
+
+		@Html.HiddenFor(model => model.Title)
+		@Html.HiddenFor(model => model.SubmitButtonText)
+
+		@Html.EditorFor(model => model.Note)
+
+		<div class="mb-3">
+			<div class="col-md-offset-2 col-md-10">
+				<input type="submit" value="@Model.SubmitButtonText" class="btn btn-success" />
+			</div>
+		</div>
+
+	</div>
+}
+
+<div>
+	@Html.ActionLink("Back to all notes", "Index", new { customerId = Model.Note.CustomerId })
+</div>

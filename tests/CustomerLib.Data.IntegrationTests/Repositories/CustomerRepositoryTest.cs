@@ -198,7 +198,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			var readCustomers = customerRepository.ReadAll();
 
 			// Then
-			Assert.Null(readCustomers);
+			Assert.Empty(readCustomers);
 		}
 
 		#endregion
@@ -280,7 +280,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			var readCustomers = customerRepository.ReadPage(2, 3);
 
 			// Then
-			Assert.Null(readCustomers);
+			Assert.Empty(readCustomers);
 		}
 
 		#endregion

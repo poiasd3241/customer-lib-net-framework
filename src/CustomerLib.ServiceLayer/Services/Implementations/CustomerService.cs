@@ -100,13 +100,13 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 			if (includeAddresses)
 			{
 				customer.Addresses =
-					_addressService.FindByCustomer(customer.CustomerId)?.ToList();
+					_addressService.FindByCustomer(customer.CustomerId).ToList();
 			}
 
 			if (includeNotes)
 			{
 				customer.Notes =
-					_noteService.FindByCustomer(customer.CustomerId)?.ToList();
+					_noteService.FindByCustomer(customer.CustomerId).ToList();
 			}
 
 			return customer;
@@ -118,7 +118,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 
 			var customers = _customerRepository.ReadAll();
 
-			if (customers is null)
+			if (customers.Count == 0)
 			{
 				return customers;
 			}
@@ -128,7 +128,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				foreach (var customer in customers)
 				{
 					customer.Addresses =
-						_addressService.FindByCustomer(customer.CustomerId)?.ToList();
+						_addressService.FindByCustomer(customer.CustomerId).ToList();
 				}
 			}
 
@@ -137,7 +137,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				foreach (var customer in customers)
 				{
 					customer.Notes =
-						_noteService.FindByCustomer(customer.CustomerId)?.ToList();
+						_noteService.FindByCustomer(customer.CustomerId).ToList();
 				}
 			}
 
@@ -168,7 +168,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 
 			var customers = _customerRepository.ReadPage(page, pageSize);
 
-			if (customers is null)
+			if (customers.Count == 0)
 			{
 				return customers;
 			}
@@ -178,7 +178,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				foreach (var customer in customers)
 				{
 					customer.Addresses =
-						_addressService.FindByCustomer(customer.CustomerId)?.ToList();
+						_addressService.FindByCustomer(customer.CustomerId).ToList();
 				}
 			}
 
@@ -187,7 +187,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				foreach (var customer in customers)
 				{
 					customer.Notes =
-						_noteService.FindByCustomer(customer.CustomerId)?.ToList();
+						_noteService.FindByCustomer(customer.CustomerId).ToList();
 				}
 			}
 

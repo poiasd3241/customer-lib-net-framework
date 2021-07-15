@@ -13,6 +13,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 	{
 		#region Private Members
 
+		private readonly ICustomerRepository _customerRepository;
 		private readonly IAddressRepository _addressRepository;
 
 		#endregion
@@ -21,11 +22,14 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 
 		public AddressService()
 		{
+			_customerRepository = new CustomerRepository();
 			_addressRepository = new AddressRepository();
 		}
 
-		public AddressService(IAddressRepository addressRepository)
+		public AddressService(ICustomerRepository customerRepository,
+			IAddressRepository addressRepository)
 		{
+			_customerRepository = customerRepository;
 			_addressRepository = addressRepository;
 		}
 
@@ -41,7 +45,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 			return result;
 		}
 
-		public void Save(Address address)
+		public bool Save(Address address)
 		{
 			var validationResult = new AddressValidator().Validate(address);
 
@@ -50,7 +54,18 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
+			using TransactionScope scope = new();
+
+			if (_customerRepository.Exists(address.CustomerId) == false)
+			{
+				return false;
+			}
+
 			_addressRepository.Create(address);
+
+			scope.Complete();
+
+			return true;
 		}
 
 		public Address Get(int addressId)

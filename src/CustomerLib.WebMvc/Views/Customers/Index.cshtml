@@ -1,0 +1,81 @@
+﻿@model CustomerLib.WebMvc.Models.Customers.CustomersModel
+
+@{
+	ViewBag.Title = "Customers";
+	var customers = Model.Customers;
+	var btnLinkCssClass = "btn btn-link";
+}
+
+<h3 class="my-4">Customers</h3>
+
+@if (Model.HasCustomers == false)
+{
+	<p>There are currently no customers in the database.</p>
+}
+else
+{
+	<table class="table">
+		<tr>
+			<th>First name</th>
+			<th>Last name</th>
+			<th>Phone number</th>
+			<th>Email</th>
+			<th>Total purchases amount</th>
+			<th>Notes</th>
+			<th>Addresses</th>
+			<th></th>
+		</tr>
+
+		@foreach (var customer in customers)
+		{
+			<tr>
+				<td>@customer.FirstName</td>
+				<td>@customer.LastName</td>
+				<td>@customer.PhoneNumber</td>
+				<td>@customer.Email</td>
+				<td>@customer.TotalPurchasesAmount</td>
+				<td>
+					@Html.ActionLink("Notes", "Index", "Notes",
+						new { customerId = customer.CustomerId }, new { @class = btnLinkCssClass })
+				</td>
+				<td>
+					@Html.ActionLink("Addresses", "Index", "Addresses",
+						new { customerId = customer.CustomerId }, new { @class = btnLinkCssClass })
+				</td>
+				<td>
+					@Html.ActionLink("Edit", "Edit", "Customers", new { customerId = customer.CustomerId },
+						new { @class = "btn btn-secondary" })
+					@Html.ActionLink("Delete", "Delete", "Customers", new { customerId = customer.CustomerId },
+						new { @class = "btn btn-danger" })
+				</td>
+			</tr>
+		}
+	</table>
+}
+
+@* Pagination navigation *@
+@if (Model.HasCustomers)
+{
+	var btnLinkDisabledCssClass = "btn btn-link disabled";
+
+	var previousPageBtnCssClass = Model.Page > 1
+		? btnLinkCssClass
+		: btnLinkDisabledCssClass;
+	var nextPageBtnCssClass = Model.Page < Model.TotalPages
+		? btnLinkCssClass
+		: btnLinkDisabledCssClass;
+
+	var pageText = $"Page {Model.Page} of {Model.TotalPages}";
+
+	<div class="d-flex flex-row">
+		@Html.ActionLink("Previous", "Index", new { page = Model.Page - 1 },
+			new { @class = previousPageBtnCssClass })
+		@Html.Label(pageText, new { @class = "align-self-center px-2" })
+		@Html.ActionLink("Next", "Index", new { page = Model.Page + 1 },
+			new { @class = nextPageBtnCssClass })
+	</div>
+}
+
+<hr />
+
+@Html.ActionLink("Create a new customer", "Create", new { }, new { @class = "btn btn-primary" })

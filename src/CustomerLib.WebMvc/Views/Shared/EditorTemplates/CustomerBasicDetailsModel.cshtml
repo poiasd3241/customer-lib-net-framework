@@ -1,0 +1,48 @@
+﻿@model CustomerLib.WebMvc.Models.Customers.CustomerBasicDetailsModel
+
+@{
+	var formControl = new { htmlAttributes = new { @class = "form-control" } };
+	var textDanger = new { @class = "text-danger" };
+}
+
+@Html.HiddenFor(model => model.CustomerId)
+
+<div class="mb-3">
+	<label class="form-label col-md-2">First name</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.FirstName, formControl)
+		@Html.ValidationMessageFor(model => model.FirstName, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Last name</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.LastName, formControl)
+		@Html.ValidationMessageFor(model => model.LastName, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Phone number</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.PhoneNumber, formControl)
+		@Html.ValidationMessageFor(model => model.PhoneNumber, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Email</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.Email, formControl)
+		@Html.ValidationMessageFor(model => model.Email, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Total purchases amount</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.TotalPurchasesAmount, formControl)
+		@Html.ValidationMessageFor(model => model.TotalPurchasesAmount, "", textDanger)
+	</div>
+</div>

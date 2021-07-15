@@ -4,6 +4,7 @@ using CustomerLib.Business.Entities;
 using CustomerLib.Business.Exceptions;
 using CustomerLib.Data.Repositories;
 using CustomerLib.ServiceLayer.Services.Implementations;
+using CustomerLib.TestHelpers;
 using Moq;
 using Xunit;
 
@@ -35,23 +36,24 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldCheckIfNoteExistsById(int noteId, bool existsExpected)
 		{
 			// Given
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
-			noteRepoMock.Setup(r => r.Exists(noteId)).Returns(existsExpected);
-			var service = new NoteService(noteRepoMock.Object);
+			var fixture = new NoteServiceFixture();
+			fixture.MockNoteRepository.Setup(r => r.Exists(noteId)).Returns(existsExpected);
+
+			var service = fixture.CreateService();
 
 			// When
 			var exists = service.Exists(noteId);
 
 			// Then
 			Assert.Equal(existsExpected, exists);
-			noteRepoMock.Verify(r => r.Exists(noteId), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Exists(noteId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnCheckIfNoteExistsByBadId()
 		{
 			// Given
-			var service = NoteServiceFixture.MockService();
+			var service = new NoteServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.Exists(0));
@@ -68,22 +70,50 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldSave()
 		{
 			// Given
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
-			var expectedNote = NoteServiceFixture.MockNote();
-			noteRepoMock.Setup(r => r.Create(expectedNote)).Returns(5);
-			var service = new NoteService(noteRepoMock.Object);
+			var note = NoteServiceFixture.MockNote();
+			var customerId = 5;
+			note.CustomerId = customerId;
+
+			var fixture = new NoteServiceFixture();
+			fixture.MockCustomerRepository.Setup(r => r.Exists(customerId)).Returns(true);
+			fixture.MockNoteRepository.Setup(r => r.Create(note)).Returns(8);
+
+			var service = fixture.CreateService();
 
 			// When
-			service.Save(expectedNote);
+			var result = service.Save(note);
 
 			// Then
-			noteRepoMock.Verify(r => r.Create(expectedNote), Times.Once);
+			Assert.True(result);
+			fixture.MockCustomerRepository.Verify(r => r.Exists(customerId), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Create(note), Times.Once);
+		}
+
+		[Fact]
+		public void ShouldNotSaveByCustomerNotFound()
+		{
+			// Given
+			var note = NoteServiceFixture.MockNote();
+			var customerId = 5;
+			note.CustomerId = customerId;
+
+			var fixture = new NoteServiceFixture();
+			fixture.MockCustomerRepository.Setup(r => r.Exists(customerId)).Returns(false);
+
+			var service = fixture.CreateService();
+
+			// When
+			var result = service.Save(note);
+
+			// Then
+			Assert.False(result);
+			fixture.MockCustomerRepository.Verify(r => r.Exists(customerId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnSaveByBadNote()
 		{
-			var service = NoteServiceFixture.MockService();
+			var service = new NoteServiceFixture().CreateService();
 
 			Assert.Throws<EntityValidationException>(() => service.Save(new Note()));
 		}
@@ -96,24 +126,27 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldGetNoteById()
 		{
 			// Given
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
+			var noteId = 5;
 			var expectedNote = NoteServiceFixture.MockNote();
-			noteRepoMock.Setup(r => r.Read(1)).Returns(expectedNote);
-			var service = new NoteService(noteRepoMock.Object);
+
+			var fixture = new NoteServiceFixture();
+			fixture.MockNoteRepository.Setup(r => r.Read(noteId)).Returns(expectedNote);
+
+			var service = fixture.CreateService();
 
 			// When
-			var note = service.Get(1);
+			var note = service.Get(noteId);
 
 			// Then
 			Assert.Equal(expectedNote, note);
-			noteRepoMock.Verify(r => r.Read(1), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Read(noteId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnGetNoteByBadId()
 		{
 			// Given
-			var service = NoteServiceFixture.MockService();
+			var service = new NoteServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.Get(0));
@@ -130,24 +163,28 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldFindByCustomerId()
 		{
 			// Given
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
+			var customerId = 5;
 			var expectedNotes = NoteServiceFixture.MockNotes();
-			noteRepoMock.Setup(r => r.ReadByCustomer(1)).Returns(expectedNotes);
-			var service = new NoteService(noteRepoMock.Object);
+
+			var fixture = new NoteServiceFixture();
+			fixture.MockNoteRepository.Setup(r => r.ReadByCustomer(customerId))
+				.Returns(expectedNotes);
+
+			var service = fixture.CreateService();
 
 			// When
-			var notes = service.FindByCustomer(1);
+			var notes = service.FindByCustomer(customerId);
 
 			// Then
 			Assert.Equal(expectedNotes, notes);
-			noteRepoMock.Verify(r => r.ReadByCustomer(1), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.ReadByCustomer(customerId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnFindByCustomerByBadId()
 		{
 			// Given
-			var service = NoteServiceFixture.MockService();
+			var service = new NoteServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.FindByCustomer(0));
@@ -165,20 +202,22 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		{
 			// Given
 			var note = NoteServiceFixture.MockNote();
-			note.NoteId = 5;
+			var noteId = 5;
+			note.NoteId = noteId;
 
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
-			noteRepoMock.Setup(r => r.Exists(note.NoteId)).Returns(true);
-			noteRepoMock.Setup(r => r.Update(note));
-			var service = new NoteService(noteRepoMock.Object);
+			var fixture = new NoteServiceFixture();
+			fixture.MockNoteRepository.Setup(r => r.Exists(noteId)).Returns(true);
+			fixture.MockNoteRepository.Setup(r => r.Update(note));
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Update(note);
 
 			// Then
 			Assert.True(result);
-			noteRepoMock.Verify(r => r.Exists(note.NoteId), Times.Once);
-			noteRepoMock.Verify(r => r.Update(note), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Exists(noteId), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Update(note), Times.Once);
 		}
 
 		[Fact]
@@ -186,24 +225,26 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		{
 			// Given
 			var note = NoteServiceFixture.MockNote();
-			note.NoteId = 5;
+			var noteId = 5;
+			note.NoteId = noteId;
 
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
-			noteRepoMock.Setup(r => r.Exists(note.NoteId)).Returns(false);
-			var service = new NoteService(noteRepoMock.Object);
+			var fixture = new NoteServiceFixture();
+			fixture.MockNoteRepository.Setup(r => r.Exists(noteId)).Returns(false);
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Update(note);
 
 			// Then
 			Assert.False(result);
-			noteRepoMock.Verify(r => r.Exists(note.NoteId), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Exists(noteId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnUpdateByBadNote()
 		{
-			var service = NoteServiceFixture.MockService();
+			var service = new NoteServiceFixture().CreateService();
 
 			Assert.Throws<EntityValidationException>(() => service.Update(new Note()));
 		}
@@ -218,18 +259,19 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 			// Given
 			var noteId = 5;
 
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
-			noteRepoMock.Setup(r => r.Exists(noteId)).Returns(true);
-			noteRepoMock.Setup(r => r.Delete(noteId));
-			var service = new NoteService(noteRepoMock.Object);
+			var fixture = new NoteServiceFixture();
+			fixture.MockNoteRepository.Setup(r => r.Exists(noteId)).Returns(true);
+			fixture.MockNoteRepository.Setup(r => r.Delete(noteId));
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Delete(noteId);
 
 			// Then
 			Assert.True(result);
-			noteRepoMock.Verify(r => r.Exists(noteId), Times.Once);
-			noteRepoMock.Verify(r => r.Delete(noteId), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Exists(noteId), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Delete(noteId), Times.Once);
 		}
 
 		[Fact]
@@ -238,23 +280,24 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 			// Given
 			var noteId = 5;
 
-			var noteRepoMock = NoteServiceFixture.MockNoteRepository();
-			noteRepoMock.Setup(r => r.Exists(noteId)).Returns(false);
-			var service = new NoteService(noteRepoMock.Object);
+			var fixture = new NoteServiceFixture();
+			fixture.MockNoteRepository.Setup(r => r.Exists(noteId)).Returns(false);
+
+			var service = fixture.CreateService();
 
 			// When
 			var result = service.Delete(noteId);
 
 			// Then
 			Assert.False(result);
-			noteRepoMock.Verify(r => r.Exists(noteId), Times.Once);
+			fixture.MockNoteRepository.Verify(r => r.Exists(noteId), Times.Once);
 		}
 
 		[Fact]
 		public void ShouldThrowOnDeleteByBadId()
 		{
 			// Given
-			var service = NoteServiceFixture.MockService();
+			var service = new NoteServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.Delete(0));
@@ -277,8 +320,16 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		/// <returns>The list containing 2 mocked notes with repo-relevant properties.</returns>
 		public static List<Note> MockNotes() => new() { MockNote(), MockNote() };
 
-		public static Mock<INoteRepository> MockNoteRepository() => new(MockBehavior.Strict);
+		public StrictMock<ICustomerRepository> MockCustomerRepository { get; set; }
+		public StrictMock<INoteRepository> MockNoteRepository { get; set; }
 
-		public static NoteService MockService() => new(MockNoteRepository().Object);
+		public NoteServiceFixture()
+		{
+			MockCustomerRepository = new();
+			MockNoteRepository = new();
+		}
+
+		public NoteService CreateService() =>
+			new(MockCustomerRepository.Object, MockNoteRepository.Object);
 	}
 }

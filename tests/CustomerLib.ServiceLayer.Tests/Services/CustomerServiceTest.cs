@@ -53,8 +53,7 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldThrowOnCheckIfCustomerExistsByBadId()
 		{
 			// Given
-			var fixture = new CustomerServiceFixture();
-			var service = fixture.CreateService();
+			var service = new CustomerServiceFixture().CreateService();
 
 			// When
 			var exception = Assert.Throws<ArgumentException>(() => service.Exists(0));
@@ -71,22 +70,23 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		public void ShouldSave()
 		{
 			// Given
+			var createdCustomerId = 5;
 			var customer = CustomerServiceFixture.MockCustomer();
 
 			var email = customer.Email;
 
 			var fixture = new CustomerServiceFixture();
 			fixture.MockCustomerRepository.Setup(r => r.IsEmailTaken(email)).Returns(false);
-			fixture.MockCustomerRepository.Setup(r => r.Create(customer)).Returns(1);
+			fixture.MockCustomerRepository.Setup(r => r.Create(customer)).Returns(createdCustomerId);
 
 			var address = customer.Addresses[0];
-			address.CustomerId = 1;
+			address.CustomerId = createdCustomerId;
 
 			var note = customer.Notes[0];
-			note.CustomerId = 1;
+			note.CustomerId = createdCustomerId;
 
-			fixture.MockAddressService.Setup(s => s.Save(address));
-			fixture.MockNoteService.Setup(s => s.Save(note));
+			fixture.MockAddressService.Setup(s => s.Save(address)).Returns(true);
+			fixture.MockNoteService.Setup(s => s.Save(note)).Returns(true);
 
 			var service = fixture.CreateService();
 
@@ -138,7 +138,7 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 			{
 				Add(new() { AddressServiceFixture.MockAddress() },
 					new() { NoteServiceFixture.MockNote() });
-				Add(null, null);
+				Add(new(), new());
 			}
 		}
 
@@ -293,11 +293,12 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 		}
 
 		[Fact]
-		public void ShouldGetAllCustomersNull()
+		public void ShouldGetAllCustomersEmpty()
 		{
 			// Given
+			var expectedCustomers = new List<Customer>();
 			var fixture = new CustomerServiceFixture();
-			fixture.MockCustomerRepository.Setup(r => r.ReadAll()).Returns((List<Customer>)null);
+			fixture.MockCustomerRepository.Setup(r => r.ReadAll()).Returns(expectedCustomers);
 
 			var service = fixture.CreateService();
 
@@ -305,7 +306,7 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 			var customers = service.GetAll(false, false);
 
 			// Then
-			Assert.Null(customers);
+			Assert.Equal(expectedCustomers, customers);
 			fixture.MockCustomerRepository.Verify(r => r.ReadAll(), Times.Once);
 		}
 
@@ -417,7 +418,7 @@ namespace CustomerLib.ServiceLayer.Tests.Services
 			var page = 2;
 			var pageSize = 10;
 			var total = 0;
-			List<Customer> expectedCustomers = null;
+			List<Customer> expectedCustomers = new();
 
 			var fixture = new CustomerServiceFixture();
 			fixture.MockCustomerRepository.Setup(r => r.GetCount()).Returns(total);

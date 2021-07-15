@@ -1,0 +1,34 @@
+﻿@model IEnumerable<CustomerLib.Business.Entities.Address>
+
+<table class="table">
+	<tr>
+		<th>Address line</th>
+		<th>Address line2</th>
+		<th>Type</th>
+		<th>City</th>
+		<th>Postal Code</th>
+		<th>State</th>
+		<th>Country</th>
+		<th></th>
+	</tr>
+
+	@foreach (var address in Model)
+	{
+		<tr>
+			<td>@address.AddressLine</td>
+			<td>@address.AddressLine2</td>
+			<td>@address.Type</td>
+			<td>@address.City</td>
+			<td>@address.PostalCode</td>
+			<td>@address.State</td>
+			<td>@address.Country</td>
+			<td>
+				@Html.ActionLink("Edit", "Edit", "Addresses",
+					new { addressId = address.AddressId }, new { @class = "btn btn-secondary" })
+				@Html.ActionLink("Delete", "Delete", "Addresses",
+					new { addressId = address.AddressId }, new { @class = "btn btn-danger" })
+			</td>
+		</tr>
+	}
+
+</table>

@@ -106,7 +106,7 @@ namespace CustomerLib.WebForms.Tests.Pages.Notes
 			var customerServiceMock = new StrictMock<ICustomerService>();
 
 			var noteServiceMock = new Mock<INoteService>(MockBehavior.Strict);
-			noteServiceMock.Setup(s => s.Save(note));
+			noteServiceMock.Setup(s => s.Save(note)).Returns(true);
 
 			var noteEdit = new NoteEdit(customerServiceMock.Object, noteServiceMock.Object)
 			{

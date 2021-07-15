@@ -19,7 +19,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			var command = new SqlCommand(
 				"SELECT CASE WHEN EXISTS (SELECT * FROM [dbo].[Addresses] " +
-				"WHERE[AddressId] = @AddressId) " +
+				"WHERE [AddressId] = @AddressId) " +
 				"THEN CAST(1 AS BIT) " +
 				"ELSE CAST(0 AS BIT) " +
 				"END;", connection);
@@ -70,12 +70,12 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			using var reader = command.ExecuteReader();
 
-			if (reader.Read())
+			if (reader.Read() == false)
 			{
-				return ReadAddress(reader);
+				return null;
 			}
 
-			return null;
+			return ReadAddress(reader);
 		}
 
 		public IReadOnlyCollection<Address> ReadByCustomer(int customerId)
@@ -90,19 +90,19 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			using var reader = command.ExecuteReader();
 
+			var addresses = new List<Address>();
+
 			if (reader.Read() == false)
 			{
-				return null;
+				return addresses;
 			}
-
-			var addresses = new List<Address>();
 
 			do
 			{
 				addresses.Add(ReadAddress(reader));
 			} while (reader.Read());
 
-			return addresses?.ToArray();
+			return addresses;
 		}
 
 		public void Update(Address address)

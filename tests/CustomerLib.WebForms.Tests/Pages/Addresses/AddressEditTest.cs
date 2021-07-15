@@ -12,6 +12,7 @@ namespace CustomerLib.WebForms.Tests.Pages.Addresses
 		[Fact]
 		public void ShouldCreateAddressEdit()
 		{
+			// Given, When
 			var addressEdit = new AddressEdit();
 
 			var customerServiceMock = new Mock<ICustomerService>();
@@ -20,6 +21,7 @@ namespace CustomerLib.WebForms.Tests.Pages.Addresses
 			var addressEditCustom = new AddressEdit(
 				customerServiceMock.Object, addressServiceMock.Object);
 
+			// Then
 			Assert.NotNull(addressEdit);
 			Assert.NotNull(addressEditCustom);
 		}
@@ -111,7 +113,7 @@ namespace CustomerLib.WebForms.Tests.Pages.Addresses
 			var customerServiceMock = new StrictMock<ICustomerService>();
 
 			var addressServiceMock = new Mock<IAddressService>(MockBehavior.Strict);
-			addressServiceMock.Setup(s => s.Save(address));
+			addressServiceMock.Setup(s => s.Save(address)).Returns(true);
 
 			var addressEdit = new AddressEdit(customerServiceMock.Object, addressServiceMock.Object)
 			{

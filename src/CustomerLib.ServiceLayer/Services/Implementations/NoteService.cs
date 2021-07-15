@@ -13,6 +13,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 	{
 		#region Private Members
 
+		private readonly ICustomerRepository _customerRepository;
 		private readonly INoteRepository _noteRepository;
 
 		#endregion
@@ -21,11 +22,13 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 
 		public NoteService()
 		{
+			_customerRepository = new CustomerRepository();
 			_noteRepository = new NoteRepository();
 		}
 
-		public NoteService(INoteRepository noteRepository)
+		public NoteService(ICustomerRepository customerRepository, INoteRepository noteRepository)
 		{
+			_customerRepository = customerRepository;
 			_noteRepository = noteRepository;
 		}
 
@@ -41,7 +44,7 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 			return result;
 		}
 
-		public void Save(Note note)
+		public bool Save(Note note)
 		{
 			var validationResult = new NoteValidator().Validate(note);
 
@@ -50,7 +53,18 @@ namespace CustomerLib.ServiceLayer.Services.Implementations
 				throw new EntityValidationException(validationResult.ToString());
 			}
 
+			using TransactionScope scope = new();
+
+			if (_customerRepository.Exists(note.CustomerId) == false)
+			{
+				return false;
+			}
+
 			_noteRepository.Create(note);
+
+			scope.Complete();
+
+			return true;
 		}
 
 		public Note Get(int noteId)

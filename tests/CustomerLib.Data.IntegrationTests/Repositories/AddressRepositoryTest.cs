@@ -145,7 +145,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			var readAddresses = addressRepository.ReadByCustomer(1);
 
 			// Then
-			Assert.Null(readAddresses);
+			Assert.Empty(readAddresses);
 		}
 
 		[Fact]
@@ -208,7 +208,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 
 			// Then
 			var deletedAddresses = addressRepository.ReadByCustomer(1);
-			Assert.Null(deletedAddresses);
+			Assert.Empty(deletedAddresses);
 		}
 	}
 

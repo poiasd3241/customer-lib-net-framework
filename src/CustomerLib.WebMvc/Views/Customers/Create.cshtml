@@ -1,0 +1,46 @@
+﻿@model CustomerLib.WebMvc.Models.Customers.CustomerCreateModel
+
+@{
+	ViewBag.Title = "Create a new customer";
+}
+
+<h3 class="my-4">Create a new customer</h3>
+
+@using (Html.BeginForm())
+{
+	@Html.AntiForgeryToken()
+
+	<div class="form-horizontal">
+		<hr />
+		<h4 class="mb-3">Basic details</h4>
+
+		@Html.EditorFor(model => model.BasicDetails)
+
+		<hr />
+
+		<h4 class="mb-3">Address</h4>
+
+		@Html.EditorFor(model => model.AddressDetails.Address)
+
+		<hr />
+
+		<h4 class="mb-3">Note</h4>
+
+		@Html.EditorFor(model => model.Note)
+
+		<hr />
+
+		<p>You can add more addresses and notes once the customer is created.</p>
+
+		<div class="mb-3">
+			<div class="col-md-offset-2 col-md-10">
+				<input type="submit" value="Create" class="btn btn-success" />
+			</div>
+		</div>
+
+	</div>
+}
+
+<div>
+	@Html.ActionLink("Back to all customers", "Index")
+</div>

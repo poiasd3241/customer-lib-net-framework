@@ -16,7 +16,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			var command = new SqlCommand(
 				"SELECT CASE WHEN EXISTS (SELECT * FROM [dbo].[Notes] " +
-				"WHERE[NoteId] = @NoteId) " +
+				"WHERE [NoteId] = @NoteId) " +
 				"THEN CAST(1 AS BIT) " +
 				"ELSE CAST(0 AS BIT) " +
 				"END;", connection);
@@ -59,12 +59,12 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			using var reader = command.ExecuteReader();
 
-			if (reader.Read())
+			if (reader.Read() == false)
 			{
-				return ReadNote(reader);
+				return null;
 			}
 
-			return null;
+			return ReadNote(reader);
 		}
 
 		public IReadOnlyCollection<Note> ReadByCustomer(int customerId)
@@ -79,19 +79,19 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			using var reader = command.ExecuteReader();
 
+			var notes = new List<Note>();
+
 			if (reader.Read() == false)
 			{
-				return null;
+				return notes;
 			}
-
-			var notes = new List<Note>();
 
 			do
 			{
 				notes.Add(ReadNote(reader));
 			} while (reader.Read());
 
-			return notes?.ToArray();
+			return notes;
 		}
 
 		public void Update(Note note)

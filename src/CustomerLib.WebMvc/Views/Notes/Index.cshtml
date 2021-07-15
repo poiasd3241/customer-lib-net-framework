@@ -1,0 +1,21 @@
+﻿@model CustomerLib.WebMvc.Models.Notes.NotesModel
+
+@{
+	var title = Model.Title;
+	ViewBag.Title = title;
+}
+
+<h3 class="my-4">@title</h3>
+
+@if (Model.HasNotes == false)
+{
+	<p class="text-warning">
+		This customer doesn't have any notes. You should add at least one note.
+	</p>
+}
+else
+{
+	@Html.Partial("_Notes", Model.Notes)
+}
+
+@Html.ActionLink("Create a new note", "Create", new { }, new { @class = "btn btn-primary" })

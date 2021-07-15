@@ -27,7 +27,24 @@ namespace CustomerLib.WebForms.Tests.Validation
 			}
 		}
 
-		private class UnknownEntity : Entity { }
+		private class UnknownEntity : Entity
+		{
+			public override bool EqualsByValue(object obj)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		[Fact]
+		public void ShouldThrowOnEqualsByValueForUnknownEntity()
+		{
+			// Given
+			var unknownEntity = new UnknownEntity();
+
+			// When, Then
+			Assert.Throws<NotImplementedException>(() =>
+				unknownEntity.EqualsByValue(new { whatever = "whatever" }));
+		}
 
 		#region Validate property (result)
 

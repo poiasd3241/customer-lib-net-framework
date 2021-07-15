@@ -1,0 +1,8 @@
+﻿@model CustomerLib.WebMvc.Models.Notes.NoteEditModel
+
+@{
+	var title = Model.Title;
+	ViewBag.Title = title;
+}
+
+@Html.Partial("_NoteEditOrCreate", Model)

@@ -29,6 +29,7 @@
 		<ProjectReference Include="..\..\src\CustomerLib.Business\CustomerLib.Business.csproj" />
 		<ProjectReference Include="..\..\src\CustomerLib.Data\CustomerLib.Data.csproj" />
 		<ProjectReference Include="..\..\src\CustomerLib.ServiceLayer\CustomerLib.ServiceLayer.csproj" />
+		<ProjectReference Include="..\CustomerLib.TestHelpers\CustomerLib.TestHelpers.csproj" />
 	</ItemGroup>
 
 </Project>

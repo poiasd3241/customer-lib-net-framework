@@ -18,7 +18,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			var command = new SqlCommand(
 				"SELECT CASE WHEN EXISTS (SELECT * FROM [dbo].[Customers] " +
-				"WHERE[CustomerId] = @CustomerId) " +
+				"WHERE [CustomerId] = @CustomerId) " +
 				"THEN CAST(1 AS BIT) " +
 				"ELSE CAST(0 AS BIT) " +
 				"END;", connection);
@@ -64,12 +64,12 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			using var reader = command.ExecuteReader();
 
-			if (reader.Read())
+			if (reader.Read() == false)
 			{
-				return ReadCustomer(reader);
+				return null;
 			}
 
-			return null;
+			return ReadCustomer(reader);
 		}
 
 		public IReadOnlyCollection<Customer> ReadAll()
@@ -81,9 +81,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			using var reader = command.ExecuteReader();
 
-			var customers = ReadCustomers(reader);
-
-			return customers?.ToArray();
+			return ReadCustomers(reader);
 		}
 
 		public int GetCount()
@@ -115,9 +113,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			using var reader = command.ExecuteReader();
 
-			var customers = ReadCustomers(reader);
-
-			return customers?.ToArray();
+			return ReadCustomers(reader);
 		}
 
 		public void Update(Customer customer)
@@ -163,7 +159,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			var command = new SqlCommand(
 				"SELECT CASE WHEN EXISTS (SELECT * FROM [dbo].[Customers] " +
-				"WHERE[Email] = @Email) " +
+				"WHERE [Email] = @Email) " +
 				"THEN CAST(1 AS BIT) " +
 				"ELSE CAST(0 AS BIT) " +
 				"END;", connection);
@@ -183,7 +179,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			var command = new SqlCommand(
 				"SELECT [CustomerId] FROM [dbo].[Customers] " +
-				"WHERE[Email] = @Email;", connection);
+				"WHERE [Email] = @Email;", connection);
 
 			command.Parameters.Add(GetEmailParameter(email));
 
@@ -229,14 +225,17 @@ namespace CustomerLib.Data.Repositories.Implementations
 						"TotalPurchasesAmount")
 		};
 
-		private static List<Customer> ReadCustomers(SqlDataReader reader)
+
+		/// <returns>An empty collection if the reader is empty; 
+		/// otherwise, the read customers.</returns>
+		private static IReadOnlyCollection<Customer> ReadCustomers(SqlDataReader reader)
 		{
+			var customers = new List<Customer>();
+
 			if (reader.Read() == false)
 			{
-				return null;
+				return customers;
 			}
-
-			var customers = new List<Customer>();
 
 			do
 			{

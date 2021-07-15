@@ -10,8 +10,14 @@ namespace CustomerLib.Data.Repositories
 		/// <returns>The Id of the created item.</returns>
 		int Create(Customer customer);
 		Customer Read(int customerId);
+
+		/// <returns>An empty collection if no customers found; 
+		/// otherwise, the found customers.</returns>
 		IReadOnlyCollection<Customer> ReadAll();
 		int GetCount();
+
+		/// <returns>An empty collection if no customers found; 
+		/// otherwise, the found customers.</returns>
 		IReadOnlyCollection<Customer> ReadPage(int page, int pageSize);
 		void Update(Customer customer);
 		void Delete(int customerId);

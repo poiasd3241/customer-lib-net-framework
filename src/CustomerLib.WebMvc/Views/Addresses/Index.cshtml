@@ -1,0 +1,21 @@
+﻿@model CustomerLib.WebMvc.Models.Addresses.AddressesModel
+
+@{
+	var title = Model.Title;
+	ViewBag.Title = title;
+}
+
+<h3 class="my-4">@title</h3>
+
+@if (Model.HasAddresses == false)
+{
+	<p class="text-warning">
+		This customer doesn't have any addresses. You should add at least one address.
+	</p>
+}
+else
+{
+	@Html.Partial("_Addresses", Model.Addresses)
+}
+
+@Html.ActionLink("Create a new address", "Create", new { }, new { @class = "btn btn-primary" })

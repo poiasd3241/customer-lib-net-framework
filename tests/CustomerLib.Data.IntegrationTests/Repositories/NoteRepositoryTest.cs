@@ -119,7 +119,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			var readNotes = noteRepository.ReadByCustomer(1);
 
 			// Then
-			Assert.Null(readNotes);
+			Assert.Empty(readNotes);
 		}
 
 		[Fact]

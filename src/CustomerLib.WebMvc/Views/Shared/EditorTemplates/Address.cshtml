@@ -1,0 +1,71 @@
+﻿@model CustomerLib.Business.Entities.Address
+
+@{
+	var types = from CustomerLib.Business.Enums.AddressType t
+				in Enum.GetValues(typeof(CustomerLib.Business.Enums.AddressType))
+				select new { Value = t, Text = t.ToString() };
+
+	var countries = new string[2] { "United States", "Canada" };
+
+	var formControl = new { htmlAttributes = new { @class = "form-control" } };
+	var textDanger = new { @class = "text-danger" };
+}
+
+@Html.HiddenFor(model => model.AddressId)
+@Html.HiddenFor(model => model.CustomerId)
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Address line</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.AddressLine, formControl)
+		@Html.ValidationMessageFor(model => model.AddressLine, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Address line2</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.AddressLine2, formControl)
+		@Html.ValidationMessageFor(model => model.AddressLine2, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Type</label>
+	<div class="col-md-10">
+		@Html.DropDownListFor(model => model.Type, new SelectList(types, "Value", "Text"),
+			formControl.htmlAttributes)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">City</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.City, formControl)
+		@Html.ValidationMessageFor(model => model.City, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">PostalCode</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.PostalCode, formControl)
+		@Html.ValidationMessageFor(model => model.PostalCode, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">State</label>
+	<div class="col-md-10">
+		@Html.EditorFor(model => model.State, formControl)
+		@Html.ValidationMessageFor(model => model.State, "", textDanger)
+	</div>
+</div>
+
+<div class="mb-3">
+	<label class="form-label col-md-2">Country</label>
+	<div class="col-md-10">
+		@Html.DropDownListFor(model => model.Country, new SelectList(countries),
+			formControl.htmlAttributes)
+	</div>
+</div>
