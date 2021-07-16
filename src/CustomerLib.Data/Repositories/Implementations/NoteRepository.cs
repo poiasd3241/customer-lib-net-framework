@@ -123,6 +123,19 @@ namespace CustomerLib.Data.Repositories.Implementations
 			command.ExecuteNonQuery();
 		}
 
+		public void DeleteByCustomer(int customerId)
+		{
+			using var connection = GetSqlConnection();
+			connection.Open();
+
+			var command = new SqlCommand(
+				"DELETE FROM [dbo].[Notes] WHERE [CustomerId] = @CustomerId;", connection);
+
+			command.Parameters.Add(GetCustomerIdParam(customerId));
+
+			command.ExecuteNonQuery();
+		}
+
 		public static void DeleteAll()
 		{
 			using var connection = GetSqlConnection();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using CustomerLib.Business.Enums;
 
 namespace CustomerLib.Business.Entities
@@ -11,6 +12,8 @@ namespace CustomerLib.Business.Entities
 		public int CustomerId { get; set; }
 		public string AddressLine { get; set; }
 		public string AddressLine2 { get; set; }
+
+		[Column("AddressTypeId")]
 		public AddressType Type { get; set; }
 		public string City { get; set; }
 		public string PostalCode { get; set; }

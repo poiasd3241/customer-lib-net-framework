@@ -3,8 +3,6 @@ using System.Linq;
 using CustomerLib.Business.Entities;
 using CustomerLib.Business.Enums;
 using CustomerLib.Business.Localization;
-using CustomerLib.TestHelpers;
-using CustomerLib.WebMvc.Models.Addresses;
 using CustomerLib.WebMvc.Models.Customers;
 using Xunit;
 using static CustomerLib.WebMvc.Tests.Models.Addresses.AddressModelsValidatorTest;

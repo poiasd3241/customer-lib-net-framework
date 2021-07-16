@@ -2,19 +2,29 @@ using System;
 using CustomerLib.Business.Entities;
 using CustomerLib.Business.Enums;
 using CustomerLib.Data.IntegrationTests.Repositories.TestHelpers;
-using CustomerLib.Data.Repositories.Implementations;
+using CustomerLib.Data.Repositories.EF;
 using Xunit;
-using static CustomerLib.Data.IntegrationTests.Repositories.CustomerRepositoryTest;
+using static CustomerLib.Data.IntegrationTests.Repositories.EF.CustomerRepositoryTest;
 
-namespace CustomerLib.Data.IntegrationTests.Repositories
+namespace CustomerLib.Data.IntegrationTests.Repositories.EF
 {
 	[Collection(nameof(NotDbSafeResourceCollection))]
 	public class AddressRepositoryTest
 	{
 		[Fact]
-		public void ShouldCreateAddressRepository()
+		public void ShouldCreateAddressRepositoryDefaultConstructor()
 		{
 			var repo = new AddressRepository();
+
+			Assert.NotNull(repo);
+		}
+
+		[Fact]
+		public void ShouldCreateAddressRepository()
+		{
+			var context = new CustomerLibDataContext();
+
+			var repo = new AddressRepository(context);
 
 			Assert.NotNull(repo);
 		}
@@ -213,7 +223,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			Assert.Equal(2, createdAddresses.Count);
 
 			// When
-			AddressRepository.DeleteAll();
+			repo.DeleteAll();
 
 			// Then
 			var deletedAddresses = repo.ReadByCustomer(1);

@@ -1,17 +1,27 @@
 using CustomerLib.Business.Entities;
-using CustomerLib.Data.Repositories.Implementations;
+using CustomerLib.Data.Repositories.EF;
 using Xunit;
-using static CustomerLib.Data.IntegrationTests.Repositories.CustomerRepositoryTest;
+using static CustomerLib.Data.IntegrationTests.Repositories.EF.CustomerRepositoryTest;
 
-namespace CustomerLib.Data.IntegrationTests.Repositories
+namespace CustomerLib.Data.IntegrationTests.Repositories.EF
 {
 	[Collection(nameof(NotDbSafeResourceCollection))]
 	public class NoteRepositoryTest
 	{
 		[Fact]
-		public void ShouldCreateNoteRepository()
+		public void ShouldCreateNoteRepositoryDefaultConstructor()
 		{
 			var repo = new NoteRepository();
+
+			Assert.NotNull(repo);
+		}
+
+		[Fact]
+		public void ShouldCreateNoteRepository()
+		{
+			var context = new CustomerLibDataContext();
+
+			var repo = new NoteRepository(context);
 
 			Assert.NotNull(repo);
 		}
@@ -100,6 +110,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 		[Theory]
 		[InlineData(1)]
 		[InlineData(2)]
+		[InlineData(81723)]
 		public void ShouldReadAllNotesByCustomerBothNotFoundAndEmpty(int customerId)
 		{
 			// Given
@@ -182,7 +193,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			Assert.Equal(2, createdNotes.Count);
 
 			// When
-			NoteRepository.DeleteAll();
+			repo.DeleteAll();
 
 			// Then
 			var deletedNotes = repo.ReadByCustomer(1);

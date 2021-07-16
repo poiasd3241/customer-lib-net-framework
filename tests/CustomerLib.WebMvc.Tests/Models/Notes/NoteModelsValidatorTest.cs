@@ -1,5 +1,4 @@
 ﻿using CustomerLib.Business.Entities;
-using CustomerLib.TestHelpers;
 using CustomerLib.WebMvc.Models.Notes;
 using Xunit;
 

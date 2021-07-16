@@ -1,18 +1,28 @@
 using System;
 using System.Linq;
 using CustomerLib.Business.Entities;
-using CustomerLib.Data.Repositories.Implementations;
+using CustomerLib.Data.Repositories.EF;
 using Xunit;
 
-namespace CustomerLib.Data.IntegrationTests.Repositories
+namespace CustomerLib.Data.IntegrationTests.Repositories.EF
 {
 	[Collection(nameof(NotDbSafeResourceCollection))]
 	public class CustomerRepositoryTest
 	{
 		[Fact]
-		public void ShouldCreateCustomerRepository()
+		public void ShouldCreateCustomerRepositoryDefaultConstructor()
 		{
 			var repo = new CustomerRepository();
+
+			Assert.NotNull(repo);
+		}
+
+		[Fact]
+		public void ShouldCreateCustomerRepository()
+		{
+			var context = new CustomerLibDataContext();
+
+			var repo = new CustomerRepository(context);
 
 			Assert.NotNull(repo);
 		}
@@ -250,7 +260,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 
 			// Then
 			Assert.Equal(2, readCustomers.Count);
-			var readCustomersList = readCustomers.ToList();
+			var readCustomersList = readCustomers.ToArray();
 
 			Assert.Equal(4, readCustomersList[0].CustomerId);
 			Assert.Equal(5, readCustomersList[1].CustomerId);
@@ -326,7 +336,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			Assert.Equal(2, createdCustomers.Count);
 
 			// When
-			CustomerRepository.DeleteAll();
+			repo.DeleteAll();
 
 			// Then
 			var deletedCustomers = repo.ReadAll();
@@ -342,7 +352,7 @@ namespace CustomerLib.Data.IntegrationTests.Repositories
 			public static CustomerRepository CreateEmptyRepository()
 			{
 				var repo = new CustomerRepository();
-				CustomerRepository.DeleteAll();
+				repo.DeleteAll();
 
 				return repo;
 			}

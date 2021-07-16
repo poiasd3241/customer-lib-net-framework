@@ -15,5 +15,6 @@ namespace CustomerLib.Data.Repositories
 		IReadOnlyCollection<Note> ReadByCustomer(int customerId);
 		void Update(Note note);
 		void Delete(int noteId);
+		void DeleteByCustomer(int customerId);
 	}
 }

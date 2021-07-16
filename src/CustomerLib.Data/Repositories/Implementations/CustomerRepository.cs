@@ -196,9 +196,10 @@ namespace CustomerLib.Data.Repositories.Implementations
 			using var connection = GetSqlConnection();
 			connection.Open();
 
-			var deleteAddressesCommand = new SqlCommand(
-				"DELETE FROM [dbo].[Addresses]", connection);
-			deleteAddressesCommand.ExecuteNonQuery();
+			var deleteFkDependentCommand = new SqlCommand(
+				"DELETE FROM [dbo].[Addresses];" +
+				"DELETE FROM [dbo].[Notes];", connection);
+			deleteFkDependentCommand.ExecuteNonQuery();
 
 			var deleteCustomersCommand = new SqlCommand(
 				"DELETE FROM [dbo].[Customers];", connection);
@@ -206,6 +207,7 @@ namespace CustomerLib.Data.Repositories.Implementations
 
 			var reseedAffectedTablesCommand = new SqlCommand(
 				"DBCC CHECKIDENT ('dbo.Addresses', RESEED, 0);" +
+				"DBCC CHECKIDENT ('dbo.Notes', RESEED, 0);" +
 				"DBCC CHECKIDENT ('dbo.Customers', RESEED, 0);", connection);
 			reseedAffectedTablesCommand.ExecuteNonQuery();
 		}

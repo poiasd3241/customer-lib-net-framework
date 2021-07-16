@@ -2,7 +2,6 @@
 using System.Linq;
 using CustomerLib.Business.Entities;
 using CustomerLib.Business.Enums;
-using CustomerLib.TestHelpers;
 using CustomerLib.WebMvc.Models.Addresses;
 using Xunit;
 
